@@ -5,14 +5,20 @@ export function Panel({
   hint,
   right,
   children,
+  testId,
 }: {
   title: string
   hint?: string
   right?: ReactNode
   children: ReactNode
+  /** Âncora estável para os testes e2e — evita depender do texto do painel. */
+  testId?: string
 }) {
   return (
-    <section className="rounded-2xl border border-[var(--color-edge)] bg-[var(--color-panel)]/80 p-5 shadow-lg shadow-black/30 backdrop-blur">
+    <section
+      data-testid={testId}
+      className="rounded-2xl border border-[var(--color-edge)] bg-[var(--color-panel)]/80 p-5 shadow-lg shadow-black/30 backdrop-blur"
+    >
       <header className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-sm font-semibold tracking-wide text-white uppercase">{title}</h2>
@@ -123,6 +129,38 @@ export function Badge({ children, color }: { children: ReactNode; color?: string
       }}
     >
       {children}
+    </span>
+  )
+}
+
+/**
+ * Tooltip em hover e foco. O `aria-label` no gatilho garante que o conteúdo
+ * chegue a quem usa leitor de tela, já que o balão em si fica `aria-hidden`.
+ */
+export function Tooltip({
+  content,
+  children,
+  testId,
+}: {
+  content: string
+  children: ReactNode
+  testId?: string
+}) {
+  return (
+    <span className="group relative inline-flex">
+      <span tabIndex={0} aria-label={content} data-testid={testId} className="cursor-help">
+        {children}
+      </span>
+      <span
+        role="tooltip"
+        aria-hidden
+        data-testid={testId ? `${testId}-content` : undefined}
+        /* `invisible` além do `opacity-0`: só opacidade mantém o balão na
+           árvore de acessibilidade e clicável quando deveria estar escondido. */
+        className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-lg border border-[var(--color-edge)] bg-[#0d1327] px-3 py-2 text-[11px] leading-relaxed font-normal text-[#dbe3ff] opacity-0 shadow-xl shadow-black/50 transition-opacity duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+      >
+        {content}
+      </span>
     </span>
   )
 }

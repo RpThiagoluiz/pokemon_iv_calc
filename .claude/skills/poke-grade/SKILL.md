@@ -41,6 +41,30 @@ Bandas default (editáveis em `src/config/grade.config.ts`):
 | 0.35 | C |
 | — | D |
 
+## Tag de IVs perfeitos no lugar certo
+
+O score é uma **média ponderada**, e média apaga informação: um "B espalhado" e um "B com dois 32 em SpA/Vel" saem com a mesma nota, mas o segundo é bem melhor na prática. A tag recupera isso.
+
+`perfectKeyRolls(growths, weights, grade)` em `grade.ts`:
+
+- **stat principal** = peso ≥ `KEY_STAT_WEIGHT_THRESHOLD` (0,5). Com γ=3 isso equivale a um base stat de ~79% do maior — pega SpA (1,00) e Vel (0,70) do Alakazam e deixa SpD (0,35) de fora.
+- **acende** com ≥ `PERFECT_ROLL_MIN_COUNT` (2) stats principais em growth 32, **e** grade abaixo de SS (em SS a tag seria ruído).
+- **só conta 32 confirmado** (`range.min === 32`). Um stat ainda ambíguo vai para `possible` e não acende a tag — nunca prometa um roll perfeito que pode não existir.
+- Os pesos manuais do usuário redefinem o que é "lugar certo", de graça.
+
+Números de referência para calibrar (Alakazam, γ=3):
+
+| IVs | score | grade |
+|---|---|---|
+| 32 em tudo | 100% | SS |
+| 32 em SpA/SpD/Vel, 16 no resto | 96,4% | SS |
+| 32 em SpA/Vel, 24 no resto | 94,1% | S |
+| 32 em SpA/Vel, 16 no resto | 88,2% | S |
+| 32 em SpA/Vel, 1 no resto | 77,2% | A ← **tag acende** |
+| 32 nos irrelevantes, 4 em SpA/Vel | 30,3% | D |
+
+Ou seja: **SS não exige 32 em tudo** — exige 32 nos stats pesados.
+
 ## Regras
 
 1. **O grade ignora quality.** Decisão de produto: quality e Power são mostrados em cards separados. Não some quality ao score.

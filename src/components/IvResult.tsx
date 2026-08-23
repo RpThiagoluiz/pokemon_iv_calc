@@ -36,7 +36,7 @@ export function IvResult({
 }) {
   if (result.status === 'noSolution') {
     return (
-      <Panel title="IVs (growth por stat)">
+      <Panel testId="iv-panel" title="IVs (growth por stat)">
         <Callout tone="error">{result.reason}</Callout>
       </Panel>
     )
@@ -48,6 +48,7 @@ export function IvResult({
 
   return (
     <Panel
+      testId="iv-panel"
       title="IVs (growth por stat)"
       hint={
         exact
@@ -55,7 +56,9 @@ export function IvResult({
           : `${result.solutionCount.toLocaleString('pt-BR')} combinações compatíveis. Suba de level e recalcule para estreitar.`
       }
       right={
-        <Badge color={exact ? '#34d399' : '#fbbf24'}>{exact ? 'exato' : 'ambíguo'}</Badge>
+        <span data-testid="iv-status">
+          <Badge color={exact ? '#34d399' : '#fbbf24'}>{exact ? 'exato' : 'ambíguo'}</Badge>
+        </span>
       }
     >
       <div className="space-y-3">
@@ -67,7 +70,10 @@ export function IvResult({
                 {STAT_LABELS[key]}
               </span>
               <GrowthBar min={g.min} max={g.max} weight={weights[key]} />
-              <span className="text-right font-mono text-sm text-white">
+              <span
+                data-testid={`iv-${key}`}
+                className="text-right font-mono text-sm text-white"
+              >
                 {g.min === g.max ? g.min : `${g.min}–${g.max}`}
                 <span className="text-[var(--color-muted)]">/{GROWTH_MAX}</span>
               </span>
@@ -78,7 +84,7 @@ export function IvResult({
 
       <div className="mt-4 flex items-baseline justify-between border-t border-[var(--color-edge)] pt-3">
         <span className="text-xs text-[var(--color-muted)]">IV total</span>
-        <span className="font-mono text-lg text-white">
+        <span data-testid="iv-total" className="font-mono text-lg text-white">
           {total.min === total.max ? total.min : `${total.min}–${total.max}`}
           <span className="text-sm text-[var(--color-muted)]">/192</span>
         </span>

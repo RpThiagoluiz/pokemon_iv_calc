@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { autoWeights, gradeFromRanges, gradeLabel, gradeRank, gradeScore } from '../src/domain/grade'
+import {
+  autoWeights,
+  gradeFromRanges,
+  gradeLabel,
+  gradeRank,
+  gradeScore,
+  keyStats,
+  perfectKeyRolls,
+} from '../src/domain/grade'
 import { STAT_KEYS, type GrowthRange, type Stats } from '../src/domain/types'
 import { ALAKAZAM, VULPIX, fillStats, statsOf } from './helpers'
 
@@ -79,11 +87,83 @@ describe('gradeLabel — âncoras de caracterização', () => {
   })
 })
 
+describe('keyStats', () => {
+  it('pega só os stats decisivos do Alakazam', () => {
+    // pesos: spa 1,000 · spe 0,702 · spd 0,348 · hp 0,068 · atk 0,051 · def 0,037
+    expect(keyStats(autoWeights(ALAKAZAM))).toEqual(['spa', 'spe'])
+  })
+
+  it('espécie uniforme tem todos os stats como principais', () => {
+    expect(keyStats(autoWeights(fillStats(80)))).toEqual(STAT_KEYS)
+  })
+})
+
+describe('perfectKeyRolls', () => {
+  const w = autoWeights(ALAKAZAM)
+
+  it('acende com 32 em SpA e Vel num Pokémon que não é SS', () => {
+    // 32 em SpA/Vel e 1 no resto → A (77,2%), não SS
+    const g = exactRanges(statsOf([1, 1, 1, 32, 1, 32]))
+    const result = perfectKeyRolls(g, w, 'A')
+    expect(result.stats).toEqual(['spa', 'spe'])
+    expect(result.qualifies).toBe(true)
+  })
+
+  it('não acende em SS: ali a tag seria ruído', () => {
+    const g = exactRanges(fillStats(32))
+    expect(perfectKeyRolls(g, w, 'SS').qualifies).toBe(false)
+  })
+
+  it('não acende com apenas um 32 no lugar certo', () => {
+    const g = exactRanges(statsOf([1, 1, 1, 32, 1, 1]))
+    const result = perfectKeyRolls(g, w, 'C')
+    expect(result.stats).toEqual(['spa'])
+    expect(result.qualifies).toBe(false)
+  })
+
+  it('ignora 32 caído em stat irrelevante', () => {
+    // 32 em HP/Atk/Def/SpD — nenhum é principal do Alakazam
+    const g = exactRanges(statsOf([32, 32, 32, 4, 32, 4]))
+    const result = perfectKeyRolls(g, w, 'D')
+    expect(result.stats).toEqual([])
+    expect(result.qualifies).toBe(false)
+  })
+
+  it('32 ainda ambíguo entra em `possible`, não em `stats`', () => {
+    const g = exactRanges(statsOf([1, 1, 1, 32, 1, 1]))
+    g.spe = { min: 28, max: 32, values: [28, 29, 30, 31, 32] }
+    const result = perfectKeyRolls(g, w, 'B')
+    expect(result.stats).toEqual(['spa'])
+    expect(result.possible).toEqual(['spe'])
+    // Não promete um roll perfeito que pode não existir.
+    expect(result.qualifies).toBe(false)
+  })
+
+  it('pesos manuais redefinem o que é "lugar certo"', () => {
+    // Usuário declara Atk/Def como o papel do bicho.
+    const custom = statsOf([0, 1, 1, 0, 0, 0])
+    const g = exactRanges(statsOf([1, 32, 32, 1, 1, 1]))
+    const result = perfectKeyRolls(g, custom, 'B')
+    expect(result.stats).toEqual(['atk', 'def'])
+    expect(result.qualifies).toBe(true)
+  })
+})
+
 describe('gradeFromRanges', () => {
   it('faixa exata devolve um grade único, sem intervalo', () => {
     const result = gradeFromRanges(exactRanges(fillStats(32)), autoWeights(ALAKAZAM))
     expect(result.isRange).toBe(false)
     expect(result.label).toBe('SS')
+  })
+
+  it('carrega a tag de IVs perfeitos junto com o grade', () => {
+    const result = gradeFromRanges(
+      exactRanges(statsOf([1, 1, 1, 32, 1, 32])),
+      autoWeights(ALAKAZAM),
+    )
+    expect(result.label).toBe('A')
+    expect(result.perfectRolls.qualifies).toBe(true)
+    expect(result.perfectRolls.stats).toEqual(['spa', 'spe'])
   })
 
   it('faixa ampla devolve um intervalo de grade', () => {

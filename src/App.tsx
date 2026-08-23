@@ -34,6 +34,23 @@ export default function App() {
 
   const slug = species.species?.slug ?? null
 
+  /**
+   * Trocar de Pokémon zera o espécime anterior — manter level, quality e stats
+   * de outro bicho faz o app calcular IVs de um espécime que não existe.
+   *
+   * A limpeza acontece depois que a busca resolve e só quando o slug realmente
+   * mudou: recarregar a mesma espécie, ou errar o nome e tomar 404, preserva o
+   * que já estava preenchido. O modo de fórmula sobrevive porque é preferência
+   * do usuário, não dado do espécime.
+   */
+  const searchSpecies = async (name: string) => {
+    const previous = slug
+    const found = await species.load(name)
+    if (found && found.slug !== previous) {
+      setForm((current) => ({ ...EMPTY_FORM, mode: current.mode }))
+    }
+  }
+
   // O preset salvo é lido por slug; a edição da sessão tem precedência sobre ele.
   const savedWeights = useMemo(() => (slug ? readJson<Stats>('weights', slug) : null), [slug])
   const customWeights = edited.slug === slug ? edited.weights : savedWeights
@@ -165,7 +182,7 @@ export default function App() {
 
       <div className={`grid gap-5 lg:grid-cols-2 ${tab === 'calc' ? '' : 'hidden'}`}>
         <div className="space-y-5">
-          <SpeciesPanel species={species} />
+          <SpeciesPanel species={species} onSearch={(name) => void searchSpecies(name)} />
           <SpecimenPanel form={form} onChange={setForm} />
         </div>
 

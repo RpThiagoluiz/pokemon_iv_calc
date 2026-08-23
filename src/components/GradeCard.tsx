@@ -1,7 +1,14 @@
 import { GRADE_COLORS } from '../config/grade.config'
 import type { GradeResult } from '../domain/grade'
-import { STAT_KEYS, STAT_LABELS, type Stats } from '../domain/types'
-import { Badge, Button, Panel } from './ui'
+import { GROWTH_MAX, STAT_KEYS, STAT_LABELS, type StatKey, type Stats } from '../domain/types'
+import { Badge, Button, Panel, Tooltip } from './ui'
+
+/** "SpA e Vel" — lista em português, com "e" antes do último. */
+function listStats(stats: StatKey[]): string {
+  const labels = stats.map((key) => STAT_LABELS[key])
+  if (labels.length <= 1) return labels.join('')
+  return `${labels.slice(0, -1).join(', ')} e ${labels[labels.length - 1]}`
+}
 
 export function GradeCard({
   grade,
@@ -17,15 +24,18 @@ export function GradeCard({
   onResetWeights: () => void
 }) {
   const color = GRADE_COLORS[grade.maxGrade]
+  const perfect = grade.perfectRolls
 
   return (
     <Panel
+      testId="grade-panel"
       title="Grade de distribuição"
       hint="Avalia se os IVs caíram nos stats que importam para esta espécie. Não considera quality."
       right={isCustom && <Button variant="ghost" onClick={onResetWeights}>Pesos automáticos</Button>}
     >
       <div className="flex items-center gap-5">
         <div
+          data-testid="grade-label"
           className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-2 text-3xl font-black"
           style={{ color, borderColor: `${color}66`, backgroundColor: `${color}14` }}
         >
@@ -61,9 +71,24 @@ export function GradeCard({
               de level para fechar.
             </p>
           )}
-          {isCustom && (
-            <div className="mt-2">
-              <Badge color="#fbbf24">pesos manuais</Badge>
+          {(perfect.qualifies || isCustom) && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {perfect.qualifies && (
+                <Tooltip
+                  testId="perfect-rolls-tag"
+                  content={
+                    `Tier ${grade.label}, mas com ${perfect.stats.length} IVs perfeitos no lugar certo: ` +
+                    `${listStats(perfect.stats)} em ${GROWTH_MAX}/${GROWTH_MAX}. ` +
+                    'O grade é uma média de todos os stats, então ele dilui esse acerto — ' +
+                    'na prática este Pokémon vale mais que outro do mesmo tier com os IVs espalhados.'
+                  }
+                >
+                  <Badge color="#f472b6">
+                    ★ {perfect.stats.length} IVs perfeitos no lugar certo
+                  </Badge>
+                </Tooltip>
+              )}
+              {isCustom && <Badge color="#fbbf24">pesos manuais</Badge>}
             </div>
           )}
         </div>

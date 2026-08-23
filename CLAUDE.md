@@ -7,9 +7,29 @@ O problema: o jogo mostra os stats finais e um IV total (`xxx/192`), mas **não*
 ## Comandos
 
 - `npm run dev` — servidor de desenvolvimento
-- `npm run test` — Vitest (obrigatório verde antes de qualquer entrega)
-- `npm run build` — `tsc -b && vite build`
+- `npm run test` — Vitest, domínio puro (obrigatório verde antes de qualquer entrega)
+- `npm run test:e2e` — Playwright; `:ui` para o modo interativo, `:report` para o relatório
+- `npm run test:all` — os dois
+- `npm run build` — `tsc -b && vite build` (type-checa `src`, `e2e` e o config)
 - `npm run lint` — oxlint
+
+## Arquitetura de testes
+
+Duas camadas, com fronteiras deliberadas:
+
+| camada | onde | testa |
+|---|---|---|
+| **unidade** | `tests/*.test.ts` (Vitest) | `src/domain/` — a matemática, incluindo property test de round-trip |
+| **e2e** | `e2e/specs/*.spec.ts` (Playwright) | o app montado: UI ↔ domínio ↔ PokeAPI ↔ `localStorage` |
+
+Regras do e2e:
+
+1. **A PokeAPI é sempre interceptada** (`e2e/fixtures/pokeapi.ts`). E2E que depende de rede externa falha por motivo alheio ao código. O stub também conta chamadas, o que permite testar o cache.
+2. **Nenhum spec importa de `src/`.** `e2e/support/formula.ts` reimplementa a fórmula em quatro linhas de propósito: se o e2e usasse o mesmo código que testa, um erro se cancelaria na ida e na volta e o round-trip provaria nada.
+3. **Seletor só existe no Page Object** (`e2e/pages/CalculatorPage.ts`). Specs falam em domínio (`enterSpecimen`, `gradeLabel`), nunca em CSS. UI mudou? Muda o POM e só ele.
+4. **Todo spec importa `test` de `e2e/fixtures/test.ts`**, nunca de `@playwright/test` direto — é ali que o stub e a navegação inicial ficam garantidos.
+5. Âncoras de teste usam `data-testid` via a prop `testId` do `Panel`; para formulário, prefira `getByLabel`/`getByRole`, que de quebra exercitam a acessibilidade.
+6. Cada teste roda em contexto novo, então `localStorage` começa limpo sem precisar de cleanup.
 
 ## Fórmulas canônicas
 
@@ -30,6 +50,7 @@ Power = (HP + Atk + Def + SpA + SpD + Vel) × quality
 3. Os expoentes do modo `discord` são **hipótese não confirmada**. Qualquer alteração neles exige validação contra espécimes reais em `tests/fixtures/specimens.json` — não ajuste "no olho".
 4. **Nunca invente base stats.** Eles vêm da PokeAPI ou de input manual do usuário. Se a PokeAPI divergir do jogo, a UI permite corrigir e o override é persistido.
 5. Cuidado com arredondamento na inversão: `round(x) = S ⟹ x ∈ [S−0.5, S+0.5)`. O intervalo é **fechado à esquerda e aberto à direita**; usar `<=` nos dois lados gera falsos candidatos.
+6. **Trocar de espécie limpa o espécime** (level, quality, IV total e os seis stats). Manter os dados de outro Pokémon faz o app calcular IVs de um espécime que não existe. A limpeza é feita em `searchSpecies` no `App.tsx`, depois que a busca resolve e só quando o slug muda de verdade — recarregar a mesma espécie ou errar o nome preserva o que estava preenchido, e o modo de fórmula sobrevive por ser preferência do usuário.
 
 ## Convenções
 

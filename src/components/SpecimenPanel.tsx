@@ -15,6 +15,7 @@ export function SpecimenPanel({
 
   return (
     <Panel
+      testId="specimen-panel"
       title="Seu espécime"
       hint="Copie exatamente o que a tela do jogo mostra. O IV total é opcional, mas é ele que elimina a ambiguidade."
     >

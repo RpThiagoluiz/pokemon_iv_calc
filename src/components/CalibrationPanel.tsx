@@ -34,6 +34,7 @@ export function CalibrationPanel({
 
   return (
     <Panel
+      testId="calibration-panel"
       title="Calibrar expoentes"
       hint="Cadastre Pokémon reais seus. Cada um elimina os expoentes que não explicam os stats observados."
       right={

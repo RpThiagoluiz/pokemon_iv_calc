@@ -20,6 +20,17 @@ export const GRADE_BANDS: ReadonlyArray<{ min: number; grade: Grade }> = [
 /** Ordem crescente, usada para comparar e montar intervalos de grade. */
 export const GRADE_ORDER: readonly Grade[] = ['D', 'C', 'B', 'A', 'A+', 'S', 'SS']
 
+/**
+ * Peso mínimo para um stat contar como "principal" da espécie.
+ *
+ * Com γ=3, peso 0,5 equivale a um base stat de ~79% do maior — o suficiente
+ * para pegar SpA e Vel de um sweeper especial e deixar SpD (0,35) de fora.
+ */
+export const KEY_STAT_WEIGHT_THRESHOLD = 0.5
+
+/** Quantos IVs perfeitos em stats principais acendem a tag de destaque. */
+export const PERFECT_ROLL_MIN_COUNT = 2
+
 /** Cor por grade, aplicada nos cards da UI. */
 export const GRADE_COLORS: Record<Grade, string> = {
   D: '#6b7280',

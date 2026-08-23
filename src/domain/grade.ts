@@ -1,9 +1,17 @@
-import { GRADE_BANDS, GRADE_ORDER, WEIGHT_GAMMA, type Grade } from '../config/grade.config'
+import {
+  GRADE_BANDS,
+  GRADE_ORDER,
+  KEY_STAT_WEIGHT_THRESHOLD,
+  PERFECT_ROLL_MIN_COUNT,
+  WEIGHT_GAMMA,
+  type Grade,
+} from '../config/grade.config'
 import {
   GROWTH_MAX,
   GROWTH_MIN,
   STAT_KEYS,
   type GrowthRange,
+  type StatKey,
   type Stats,
 } from './types'
 
@@ -47,6 +55,48 @@ export function gradeLabel(score: number): Grade {
   return 'D'
 }
 
+/** Stats "principais" da espécie: os que o peso marca como decisivos. */
+export function keyStats(weights: Stats): StatKey[] {
+  return STAT_KEYS.filter((key) => weights[key] >= KEY_STAT_WEIGHT_THRESHOLD)
+}
+
+export interface PerfectRolls {
+  /** Stats principais com growth confirmadamente em 32. */
+  stats: StatKey[]
+  /** Stats principais que ainda PODEM ser 32, mas estão ambíguos. */
+  possible: StatKey[]
+  /** Acende a tag: 2+ IVs perfeitos no lugar certo, num Pokémon que não é SS. */
+  qualifies: boolean
+}
+
+/**
+ * Detecta IVs perfeitos caídos nos stats que importam.
+ *
+ * Existe porque o score é uma média ponderada e, por isso, não distingue um
+ * "B espalhado" de um "B com dois 32 no lugar certo" — que na prática é um
+ * Pokémon bem melhor. A tag recupera essa informação que a média apaga.
+ *
+ * Só conta 32 confirmado (`min === 32`); um stat ainda ambíguo entra em
+ * `possible`, para não prometer um roll perfeito que pode não existir.
+ */
+export function perfectKeyRolls(
+  growths: Stats<GrowthRange>,
+  weights: Stats,
+  grade: Grade,
+): PerfectRolls {
+  const keys = keyStats(weights)
+  const stats = keys.filter((key) => growths[key].min === GROWTH_MAX)
+  const possible = keys.filter(
+    (key) => growths[key].min < GROWTH_MAX && growths[key].max === GROWTH_MAX,
+  )
+  return {
+    stats,
+    possible,
+    // Em SS a tag seria ruído: o grade já diz tudo.
+    qualifies: stats.length >= PERFECT_ROLL_MIN_COUNT && gradeRank(grade) < gradeRank('SS'),
+  }
+}
+
 export interface GradeResult {
   /** Score do cenário mais pessimista compatível com a solução. */
   minScore: number
@@ -58,6 +108,8 @@ export interface GradeResult {
   isRange: boolean
   /** Ex.: `"A"` ou `"B–A"`. */
   label: string
+  /** IVs perfeitos caídos nos stats principais — o que a média ponderada apaga. */
+  perfectRolls: PerfectRolls
 }
 
 /**
@@ -92,6 +144,8 @@ export function gradeFromRanges(
     maxGrade,
     isRange,
     label: isRange ? `${minGrade}–${maxGrade}` : minGrade,
+    // Usa o grade otimista: se o teto já é SS, a tag não acrescenta nada.
+    perfectRolls: perfectKeyRolls(growths, weights, maxGrade),
   }
 }
 

@@ -11,7 +11,8 @@ export interface UseSpeciesResult {
   overriddenStats: StatKey[]
   loading: boolean
   error: string | null
-  load: (name: string, force?: boolean) => Promise<void>
+  /** Devolve a espécie carregada, ou `null` se a busca falhou ou foi superada por outra. */
+  load: (name: string, force?: boolean) => Promise<Species | null>
   setBaseStat: (key: StatKey, value: number) => void
   resetOverrides: () => void
 }
@@ -26,21 +27,24 @@ export function useSpecies(): UseSpeciesResult {
   /** Ignora respostas de buscas que já foram substituídas por outra mais nova. */
   const requestId = useRef(0)
 
-  const load = useCallback(async (name: string, force = false) => {
+  const load = useCallback(async (name: string, force = false): Promise<Species | null> => {
     const slug = normalizeName(name)
-    if (!slug) return
+    if (!slug) return null
     const id = ++requestId.current
     setLoading(true)
     setError(null)
     try {
       const found = await fetchSpecies(slug, force)
-      if (id !== requestId.current) return
+      if (id !== requestId.current) return null
       setSpecies(found)
       setOverrides(readJson<Partial<Stats>>('override', found.slug) ?? {})
+      return found
     } catch (err) {
-      if (id !== requestId.current) return
-      setSpecies(null)
+      if (id !== requestId.current) return null
+      // Um erro de digitação não deve destruir a espécie já carregada:
+      // mostra a mensagem e mantém o que estava na tela.
       setError(err instanceof Error ? err.message : 'Falha ao buscar a espécie.')
+      return null
     } finally {
       if (id === requestId.current) setLoading(false)
     }

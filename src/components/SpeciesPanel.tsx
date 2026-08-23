@@ -3,11 +3,19 @@ import type { UseSpeciesResult } from '../hooks/useSpecies'
 import { STAT_KEYS, STAT_LABELS } from '../domain/types'
 import { Badge, Button, Callout, Field, NumberInput, Panel, TextInput } from './ui'
 
-export function SpeciesPanel({ species: s }: { species: UseSpeciesResult }) {
+export function SpeciesPanel({
+  species: s,
+  onSearch,
+}: {
+  species: UseSpeciesResult
+  /** Buscar troca de espécie e é o App que limpa o espécime anterior. */
+  onSearch: (name: string) => void
+}) {
   const [query, setQuery] = useState('vulpix')
 
   return (
     <Panel
+      testId="species-panel"
       title="Espécie"
       hint="Base stats vêm da PokeAPI. Se divergirem do jogo, edite — a correção fica salva."
       right={
@@ -32,11 +40,11 @@ export function SpeciesPanel({ species: s }: { species: UseSpeciesResult }) {
               value={query}
               onChange={setQuery}
               placeholder="vulpix, alakazam, mr-mime…"
-              onEnter={() => void s.load(query)}
+              onEnter={() => onSearch(query)}
             />
           </Field>
         </div>
-        <Button onClick={() => void s.load(query)} disabled={s.loading}>
+        <Button onClick={() => onSearch(query)} disabled={s.loading}>
           {s.loading ? 'Buscando…' : 'Buscar'}
         </Button>
       </div>
