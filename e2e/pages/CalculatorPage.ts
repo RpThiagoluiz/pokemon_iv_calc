@@ -44,6 +44,14 @@ export class CalculatorPage {
     await expect(this.speciesInput).toBeVisible()
   }
 
+  get skipLink(): Locator {
+    return this.page.getByRole('link', { name: 'Pular para o conteúdo' })
+  }
+
+  get githubLink(): Locator {
+    return this.page.getByTestId('github-link')
+  }
+
   get speciesInput(): Locator {
     // Pelo label, não pelo placeholder: o campo Apelido também sugere "Vulpix".
     return this.page.getByLabel('Buscar Pokémon')

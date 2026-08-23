@@ -1,8 +1,12 @@
 # Poke IV Calc
 
+### ▶ [pokeidleivcalc.netlify.app](https://pokeidleivcalc.netlify.app/)
+
 Calculadora de IV, Power e grade para o **Poke Idle World**.
 
 O jogo mostra os stats finais e um IV total (`xxx/192`), mas esconde o *growth* (IV individual) de cada stat. Este app inverte a fórmula do jogo para descobrir esses growths — e diz se eles caíram nos stats que realmente importam para a espécie.
+
+Se te ajudou, **deixe uma ⭐ no repositório** — é o que mostra que vale continuar melhorando.
 
 ## Rodando
 
@@ -11,7 +15,7 @@ npm install
 npx playwright install chromium   # só na primeira vez, para o e2e
 npm run dev        # http://localhost:5173
 npm run test       # 72 testes de domínio (Vitest)
-npm run test:e2e   # 66 testes de ponta a ponta (Playwright)
+npm run test:e2e   # 73 testes de ponta a ponta (Playwright)
 npm run build
 ```
 
@@ -107,4 +111,12 @@ As regras completas — tokens, componentes, breakpoints, checklist de a11y e an
 
 ## Deploy
 
+Publicado em **[pokeidleivcalc.netlify.app](https://pokeidleivcalc.netlify.app/)**.
+
 `npm run build` gera `dist/`. No Netlify: build command `npm run build`, publish directory `dist`.
+
+## Contribuindo
+
+Abra uma issue ou PR em [RpThiagoluiz/pokemon_iv_calc](https://github.com/RpThiagoluiz/pokemon_iv_calc). O template de PR e o CI (lint, tipos, 72 testes de domínio e 73 de ponta a ponta) rodam sozinhos a cada abertura.
+
+E se a ferramenta te poupou tempo, **[deixe uma ⭐](https://github.com/RpThiagoluiz/pokemon_iv_calc)**.

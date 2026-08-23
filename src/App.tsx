@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { CompareModal } from './components/CompareModal'
 import { ComparePanel } from './components/ComparePanel'
 import { GradeCard } from './components/GradeCard'
+import { ExternalLink, GithubIcon } from './components/prose'
 import { HelpIcon, Tutorial } from './components/Tutorial'
 import { IvResult } from './components/IvResult'
 import { PowerCard } from './components/PowerCard'
@@ -9,6 +10,7 @@ import { SpeciesPanel } from './components/SpeciesPanel'
 import { SpecimenPanel } from './components/SpecimenPanel'
 import { EMPTY_FORM, type SpecimenForm } from './components/specimenForm'
 import { Callout, IconButton, Panel } from './components/ui'
+import { REPO_URL } from './config/links.config'
 import { accentFor, accentVars } from './config/types.config'
 import { COMPARE_MAX, defaultNickname, type CompareEntry } from './domain/compare'
 import { explainSolution } from './domain/explain'
@@ -202,9 +204,21 @@ export default function App() {
           </div>
         </main>
 
-        <footer className="mt-8 text-xs text-[var(--color-text-tertiary)] sm:mt-10">
-          Ferramenta não oficial feita por fãs, sem vínculo com o Poke Idle World. Dados de espécies
-          via PokeAPI.
+        <footer className="mt-8 border-t border-[var(--color-border-subtle)] pt-5 sm:mt-10">
+          <div className="flex flex-wrap items-center gap-3">
+            <ExternalLink href={REPO_URL} testId="github-link">
+              <GithubIcon />
+              Dar uma ⭐ no GitHub
+            </ExternalLink>
+            <p className="text-xs text-[var(--color-text-tertiary)]">
+              Projeto aberto e gratuito. Uma estrela ajuda mais gente a encontrar.
+            </p>
+          </div>
+
+          <p className="mt-4 text-xs text-[var(--color-text-tertiary)]">
+            Ferramenta não oficial feita por fãs, sem vínculo com o Poke Idle World. Dados de
+            espécies via PokeAPI.
+          </p>
         </footer>
       </div>
 
