@@ -62,6 +62,8 @@ Power = (HP + Atk + Def + SpA + SpD + Vel) × quality
 - A chave interna dos stats é a do domínio: `hp, atk, def, spa, spd, spe` (`STAT_KEYS` em `src/domain/types.ts`). `spe` ↔ label `Vel`.
 - Tailwind v4 — configuração via `@import "tailwindcss"` no CSS, sem `tailwind.config.js`.
 - Testes ficam em `tests/*.test.ts` (fora de `src/`), conforme `vite.config.ts`.
+- **Nenhuma cor crua em `src/components/`** — tokens em `src/index.css`, mapas de cor em `src/config/*.config.ts`. Detalhes na skill `poke-ui`.
+- O tutorial de primeiro uso abre uma vez e grava `pokeivcalc:onboarding:seen`. Nos testes e2e ele é marcado como visto antes de navegar; só `tutorial.spec.ts` usa `test.use({ skipOnboarding: false })`.
 
 ## API externa
 
@@ -71,5 +73,9 @@ Power = (HP + Atk + Def + SpA + SpD + Vel) × quality
 
 ## Skills do projeto
 
-Antes de mexer em cálculo, dados ou grade, leia a skill correspondente em `.claude/skills/`:
-`poke-formula` (fórmula e inversão), `poke-data` (PokeAPI e cache), `poke-grade` (pesos e bandas D→SS).
+Antes de mexer em qualquer área, leia a skill correspondente em `.claude/skills/`:
+
+- **`poke-ui`** — sistema de design: tokens, componentes, responsivo, a11y, microtexto e anti-padrões. **Obrigatória** para qualquer mudança em `src/components/`, `src/index.css` ou `index.html`.
+- `poke-formula` — fórmula e inversão
+- `poke-data` — PokeAPI e cache
+- `poke-grade` — pesos, bandas D→SS e comparação

@@ -11,11 +11,13 @@ npm install
 npx playwright install chromium   # só na primeira vez, para o e2e
 npm run dev        # http://localhost:5173
 npm run test       # 72 testes de domínio (Vitest)
-npm run test:e2e   # 46 testes de ponta a ponta (Playwright)
+npm run test:e2e   # 66 testes de ponta a ponta (Playwright)
 npm run build
 ```
 
 ## Como usar
+
+Na primeira visita um **tutorial em 5 passos** abre sozinho e explica o problema, os dados a copiar, como o cálculo é feito, o grade e a comparação. Dá para pular a qualquer momento, e o botão **?** no topo reabre quando quiser.
 
 1. **Pokémon** — digite o nome da espécie (`vulpix`, `alakazam`, `mr-mime`). Os base stats vêm da PokeAPI e ficam editáveis: se divergirem do jogo, corrija e a correção fica salva.
 2. **Seu Pokémon** — apelido (opcional), level, quality e os seis stats exatamente como a tela do jogo mostra. O IV total é opcional, mas é ele que elimina a ambiguidade.
@@ -82,9 +84,9 @@ src/domain/       matemática pura, sem React — coberta por testes
   grade.ts        pesos automáticos, bandas D→SS e a tag de IVs perfeitos
   compare.ts      ranking, agrupamento por tier e melhor-por-stat
   explain.ts      os textos dos tooltips, como funções puras
-src/config/       constantes ajustáveis (expoentes, bandas)
+src/config/       constantes ajustáveis (expoentes, bandas, tipos, tutorial)
 src/data/         PokeAPI + cache
-src/components/   UI
+src/components/   UI sobre os tokens de src/index.css
 tests/            Vitest — o domínio
 e2e/
   fixtures/       stub da PokeAPI + espécies congeladas + o `test` do projeto
@@ -94,3 +96,15 @@ e2e/
 ```
 
 O e2e nunca importa de `src/` e nunca toca a rede: a PokeAPI é interceptada e as espécies são fixtures locais. Detalhes em `CLAUDE.md`.
+
+## Design
+
+Tema escuro único, mobile-first, com o **acento derivado do tipo do Pokémon** — Vulpix deixa a tela laranja, Alakazam deixa rosa. Tipografia Inter + JetBrains Mono (números com `tabular-nums`, para alinharem em coluna).
+
+Todos os pares de cor foram medidos contra WCAG AA: pior caso **4,65:1** no texto terciário e **6,32:1** nas cores de grade. Cor nunca é o único sinal — grade mostra a letra, tipo mostra o nome, stat que pesa leva ★, melhor da coluna leva ▲.
+
+As regras completas — tokens, componentes, breakpoints, checklist de a11y e anti-padrões — estão em [`.claude/skills/poke-ui/SKILL.md`](.claude/skills/poke-ui/SKILL.md).
+
+## Deploy
+
+`npm run build` gera `dist/`. No Netlify: build command `npm run build`, publish directory `dist`.

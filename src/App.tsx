@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react'
 import { CompareModal } from './components/CompareModal'
 import { ComparePanel } from './components/ComparePanel'
 import { GradeCard } from './components/GradeCard'
+import { HelpIcon, Tutorial } from './components/Tutorial'
 import { IvResult } from './components/IvResult'
 import { PowerCard } from './components/PowerCard'
 import { SpeciesPanel } from './components/SpeciesPanel'
 import { SpecimenPanel } from './components/SpecimenPanel'
 import { EMPTY_FORM, type SpecimenForm } from './components/specimenForm'
-import { Callout, Panel } from './components/ui'
+import { Callout, IconButton, Panel } from './components/ui'
+import { accentFor, accentVars } from './config/types.config'
 import { COMPARE_MAX, defaultNickname, type CompareEntry } from './domain/compare'
 import { explainSolution } from './domain/explain'
 import { sumStats } from './domain/formula'
@@ -15,6 +17,7 @@ import { autoWeights, gradeFromRanges, keyStats } from './domain/grade'
 import { ivTotalRange, solveGrowths } from './domain/inverse'
 import { STAT_KEYS, type SpecimenInput, type Stats } from './domain/types'
 import { useSpecies } from './hooks/useSpecies'
+import { useTutorial } from './hooks/useTutorial'
 
 /** Converte o texto do formulário em número, ou `null` se estiver vazio/inválido. */
 function num(value: string): number | null {
@@ -26,6 +29,7 @@ function num(value: string): number | null {
 
 export default function App() {
   const species = useSpecies()
+  const tutorial = useTutorial()
   const [form, setForm] = useState<SpecimenForm>(EMPTY_FORM)
   const [compareEntries, setCompareEntries] = useState<CompareEntry[]>([])
   const [compareOpen, setCompareOpen] = useState(false)
@@ -33,7 +37,7 @@ export default function App() {
   const slug = species.species?.slug ?? null
 
   /**
-   * Trocar de Pokémon zera o espécime E a comparação — a lista é travada numa
+   * Trocar de Pokémon zera o formulário E a comparação — a lista é travada numa
    * espécie só, então misturar espécies ali compararia coisas incomparáveis.
    *
    * A limpeza acontece depois que a busca resolve e só quando o slug realmente
@@ -52,6 +56,7 @@ export default function App() {
 
   const weights = useMemo(() => autoWeights(species.baseStats), [species.baseStats])
   const keyStatNames = useMemo(() => keyStats(weights), [weights])
+  const accent = useMemo(() => accentFor(species.species?.types), [species.species])
 
   const parsed = useMemo(() => {
     const level = num(form.level)
@@ -128,54 +133,79 @@ export default function App() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold text-white">
-          Poke IV Calc <span className="text-[var(--color-muted)]">· Poke Idle World</span>
-        </h1>
-      </header>
+    <div style={accentVars(accent)} className="min-h-dvh">
+      <a href="#conteudo" className="skip-link">
+        Pular para o conteúdo
+      </a>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="space-y-5">
-          <SpeciesPanel species={species} onSearch={(name) => void searchSpecies(name)} />
-          <SpecimenPanel form={form} onChange={setForm} />
-        </div>
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
+        <header className="mb-6 flex items-start justify-between gap-4 sm:mb-8">
+          <h1 className="text-xl font-bold text-[var(--color-text-primary)] sm:text-2xl">
+            Poke IV Calc{' '}
+            <span className="font-medium text-[var(--color-text-tertiary)]">
+              · Poke Idle World
+            </span>
+          </h1>
+          <IconButton label="Ver o tutorial" onClick={tutorial.reopen}>
+            <HelpIcon />
+          </IconButton>
+        </header>
 
-        <div className="space-y-5">
-          {!ready ? (
-            <Panel title="Resultado">
-              <Callout tone="info">
-                {species.species === null
-                  ? 'Busque uma espécie para começar.'
-                  : 'Preencha level, quality e os seis stats exibidos no jogo.'}
-              </Callout>
-            </Panel>
-          ) : (
-            <>
-              <IvResult result={solved!} weights={weights} explanation={explanation} />
-              {grade && <GradeCard grade={grade} keyStatNames={keyStatNames} />}
-              <PowerCard
-                power={statSum * parsed.quality!}
-                statSum={statSum}
-                quality={parsed.quality!}
+        <main id="conteudo" className="grid gap-4 sm:gap-5 lg:grid-cols-2">
+          <div className="space-y-4 sm:space-y-5">
+            <SpeciesPanel species={species} onSearch={(name) => void searchSpecies(name)} />
+            <SpecimenPanel form={form} onChange={setForm} />
+          </div>
+
+          <div
+            className="space-y-4 sm:space-y-5"
+            aria-live="polite"
+            aria-busy={species.loading || undefined}
+          >
+            {!ready ? (
+              <Panel title="Resultado">
+                <Callout tone="info">
+                  {species.species === null
+                    ? 'Busque um Pokémon para começar. Se for a primeira vez, o botão “?” no topo explica tudo.'
+                    : 'Preencha level, quality e os seis stats exibidos no jogo.'}
+                </Callout>
+              </Panel>
+            ) : (
+              <>
+                <IvResult
+                  result={solved!}
+                  keyStatNames={keyStatNames}
+                  explanation={explanation}
+                />
+                {grade && <GradeCard grade={grade} keyStatNames={keyStatNames} />}
+                <PowerCard
+                  power={statSum * parsed.quality!}
+                  statSum={statSum}
+                  quality={parsed.quality!}
+                />
+              </>
+            )}
+
+            {species.species && (
+              <ComparePanel
+                entries={compareEntries}
+                canAdd={canAddToCompare}
+                addBlockedReason={addBlockedReason}
+                onAdd={addToCompare}
+                onRemove={(id) =>
+                  setCompareEntries((current) => current.filter((entry) => entry.id !== id))
+                }
+                onClear={() => setCompareEntries([])}
+                onValidate={() => setCompareOpen(true)}
               />
-            </>
-          )}
+            )}
+          </div>
+        </main>
 
-          {species.species && (
-            <ComparePanel
-              entries={compareEntries}
-              canAdd={canAddToCompare}
-              addBlockedReason={addBlockedReason}
-              onAdd={addToCompare}
-              onRemove={(id) =>
-                setCompareEntries((current) => current.filter((entry) => entry.id !== id))
-              }
-              onClear={() => setCompareEntries([])}
-              onValidate={() => setCompareOpen(true)}
-            />
-          )}
-        </div>
+        <footer className="mt-8 text-xs text-[var(--color-text-tertiary)] sm:mt-10">
+          Ferramenta não oficial feita por fãs, sem vínculo com o Poke Idle World. Dados de espécies
+          via PokeAPI.
+        </footer>
       </div>
 
       <CompareModal
@@ -185,10 +215,7 @@ export default function App() {
         onClose={() => setCompareOpen(false)}
       />
 
-      <footer className="mt-10 text-[11px] text-[var(--color-muted)]">
-        Ferramenta não oficial feita por fãs, sem vínculo com o Poke Idle World. Dados de espécies
-        via PokeAPI.
-      </footer>
+      <Tutorial tutorial={tutorial} />
     </div>
   )
 }

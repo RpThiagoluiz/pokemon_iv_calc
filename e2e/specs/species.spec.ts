@@ -1,5 +1,5 @@
 import { expect, test } from '../fixtures/test'
-import { ALAKAZAM, VULPIX } from '../fixtures/species'
+import { ALAKAZAM, VULPIX, dexNumber } from '../fixtures/species'
 import type { CalculatorPage } from '../pages/CalculatorPage'
 import { STAT_KEYS, growths } from '../support/formula'
 
@@ -18,7 +18,7 @@ test.describe('busca de espécie', () => {
   test('carrega os base stats da espécie', async ({ app }) => {
     await app.searchSpecies('vulpix')
 
-    await expect(app.speciesPanel).toContainText('#37')
+    await expect(app.speciesPanel).toContainText(dexNumber(VULPIX))
     expect(await app.readBaseStats()).toEqual(VULPIX.baseStats)
   })
 
@@ -29,7 +29,7 @@ test.describe('busca de espécie', () => {
 
     await expect(app.speciesError).toBeVisible()
     // Um erro de digitação não pode destruir a sessão.
-    await expect(app.speciesPanel).toContainText('#37')
+    await expect(app.speciesPanel).toContainText(dexNumber(VULPIX))
     const form = await app.readSpecimenForm()
     expect(form.level).toBe('78')
     await expect(app.ivStatus).toHaveText('exato')
@@ -94,7 +94,7 @@ test.describe('trocar de Pokémon limpa o espécime anterior', () => {
     const form = await app.readSpecimenForm()
     for (const campo of CAMPOS) expect(form[campo], `campo ${campo}`).toBe('')
     await expect(app.placeholderMessage).toBeVisible()
-    await expect(app.speciesPanel).toContainText('#65')
+    await expect(app.speciesPanel).toContainText(dexNumber(ALAKAZAM))
   })
 
   test('rebuscar a MESMA espécie preserva os dados', async ({ app }) => {

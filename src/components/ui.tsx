@@ -1,4 +1,6 @@
-import { useId, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useId, useRef, type ReactNode } from 'react'
+
+/* ------------------------------------------------------------------ layout */
 
 export function Panel({
   title,
@@ -17,19 +19,34 @@ export function Panel({
   return (
     <section
       data-testid={testId}
-      className="rounded-2xl border border-[var(--color-edge)] bg-[var(--color-panel)]/80 p-5 shadow-lg shadow-black/30 backdrop-blur"
+      className="rounded-[var(--radius-xl)] border border-[var(--color-border-default)] bg-[var(--color-surface-raised)]/85 p-4 shadow-xl shadow-black/25 backdrop-blur-sm sm:p-5"
     >
-      <header className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-sm font-semibold tracking-wide text-white uppercase">{title}</h2>
-          {hint && <p className="mt-1 text-xs text-[var(--color-muted)]">{hint}</p>}
+      {/* Sem `flex-wrap`: com ele, uma dica longa empurrava a ação para uma
+          linha própria e ela ficava órfã no meio do painel. */}
+      <header className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-semibold tracking-wide text-[var(--color-text-primary)]">
+            {title}
+          </h2>
+          {hint && (
+            <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-tertiary)]">{hint}</p>
+          )}
         </div>
-        {right}
+        {right && <div className="flex shrink-0 gap-2">{right}</div>}
       </header>
       {children}
     </section>
   )
 }
+
+/**
+ * O `Field` gera o par id/aria-describedby e os inputs consomem daqui.
+ *
+ * Antes o `<label>` embrulhava rótulo, controle E dica — o que fazia a dica
+ * virar parte do **nome** acessível ("Quality ex.: 1.42"). Dica descreve, não
+ * nomeia: mesma lição do tooltip.
+ */
+const FieldContext = createContext<{ id: string; describedBy?: string } | null>(null)
 
 export function Field({
   label,
@@ -40,17 +57,38 @@ export function Field({
   hint?: string
   children: ReactNode
 }) {
+  const id = useId()
+  const hintId = hint ? `${id}-hint` : undefined
+
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-[var(--color-muted)]">{label}</span>
-      {children}
-      {hint && <span className="mt-1 block text-[11px] text-[var(--color-muted)]">{hint}</span>}
-    </label>
+    <div className="block">
+      <label
+        htmlFor={id}
+        className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]"
+      >
+        {label}
+      </label>
+      <FieldContext.Provider value={{ id, describedBy: hintId }}>{children}</FieldContext.Provider>
+      {hint && (
+        <span id={hintId} className="mt-1 block text-xs text-[var(--color-text-tertiary)]">
+          {hint}
+        </span>
+      )}
+    </div>
   )
 }
 
+/* ------------------------------------------------------------------ inputs */
+
+/** `min-h-11` = 44px: alvo de toque mínimo no celular. */
 const inputBase =
-  'w-full rounded-lg border bg-[var(--color-panel-2)] px-3 py-2 text-sm text-white outline-none transition focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent)]/30'
+  'w-full min-h-11 rounded-[var(--radius-md)] border bg-[var(--color-surface-inset)] px-3 text-sm text-[var(--color-text-primary)] outline-none transition-colors placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-focus)]'
+
+function borderFor(invalid?: boolean, highlight?: boolean): string {
+  if (invalid) return 'border-[var(--color-danger)]'
+  if (highlight) return 'border-[var(--color-warn)]'
+  return 'border-[var(--color-border-strong)]'
+}
 
 export function TextInput({
   value,
@@ -65,10 +103,14 @@ export function TextInput({
   onEnter?: () => void
   invalid?: boolean
 }) {
+  const field = useContext(FieldContext)
   return (
     <input
       type="text"
-      className={`${inputBase} ${invalid ? 'border-rose-500' : 'border-[var(--color-edge)]'}`}
+      id={field?.id}
+      aria-describedby={field?.describedBy}
+      aria-invalid={invalid || undefined}
+      className={`${inputBase} ${borderFor(invalid)}`}
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
@@ -82,6 +124,8 @@ export function TextInput({
 /**
  * Campo numérico que guarda o texto cru enquanto o usuário digita.
  * Sem isso, apagar o conteúdo para redigitar vira `0` no meio da edição.
+ *
+ * `inputMode="decimal"` abre o teclado numérico no celular.
  */
 export function NumberInput({
   value,
@@ -100,15 +144,15 @@ export function NumberInput({
   invalid?: boolean
   highlight?: boolean
 }) {
-  const border = invalid
-    ? 'border-rose-500'
-    : highlight
-      ? 'border-amber-400'
-      : 'border-[var(--color-edge)]'
+  const field = useContext(FieldContext)
   return (
     <input
       type="number"
-      className={`${inputBase} ${border}`}
+      inputMode="decimal"
+      id={field?.id}
+      aria-describedby={field?.describedBy}
+      aria-invalid={invalid || undefined}
+      className={`${inputBase} tabular ${borderFor(invalid, highlight)}`}
       value={value}
       step={step}
       min={min}
@@ -118,18 +162,120 @@ export function NumberInput({
   )
 }
 
+/* ----------------------------------------------------------------- actions */
+
+const buttonBase =
+  'inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[var(--radius-md)] px-4 text-sm font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40'
+
+const buttonVariants = {
+  primary: 'bg-[var(--accent)] text-[var(--color-surface-base)] hover:brightness-110',
+  ghost:
+    'border border-[var(--color-border-strong)] text-[var(--color-text-secondary)] hover:border-[var(--accent)] hover:text-[var(--color-text-primary)]',
+  danger:
+    'border border-[var(--color-danger)]/50 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10',
+} as const
+
+export function Button({
+  children,
+  onClick,
+  variant = 'primary',
+  disabled,
+  type = 'button',
+}: {
+  children: ReactNode
+  onClick?: () => void
+  variant?: keyof typeof buttonVariants
+  disabled?: boolean
+  type?: 'button' | 'submit'
+}) {
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${buttonBase} ${buttonVariants[variant]}`}
+    >
+      {children}
+    </button>
+  )
+}
+
+/**
+ * Ação sem texto. `label` é obrigatório: vira o nome acessível e o tooltip
+ * nativo — um ícone sozinho não diz nada a quem usa leitor de tela.
+ */
+export function IconButton({
+  label,
+  onClick,
+  children,
+  active,
+}: {
+  label: string
+  onClick: () => void
+  children: ReactNode
+  active?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] border transition-colors ${
+        active
+          ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--color-text-primary)]'
+          : 'border-[var(--color-border-strong)] text-[var(--color-text-secondary)] hover:border-[var(--accent)] hover:text-[var(--color-text-primary)]'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+/* ------------------------------------------------------------------ status */
+
 export function Badge({ children, color }: { children: ReactNode; color?: string }) {
+  const c = color ?? 'var(--accent)'
   return (
     <span
-      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
       style={{
-        color: color ?? '#c9d4ff',
-        backgroundColor: `${color ?? '#6ea8fe'}1f`,
-        border: `1px solid ${color ?? '#6ea8fe'}55`,
+        color: c,
+        backgroundColor: `color-mix(in srgb, ${c} 14%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${c} 45%, transparent)`,
       }}
     >
       {children}
     </span>
+  )
+}
+
+export function Callout({
+  tone,
+  children,
+}: {
+  tone: 'error' | 'warn' | 'info'
+  children: ReactNode
+}) {
+  const tones = {
+    error: 'border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 text-[var(--color-danger)]',
+    warn: 'border-[var(--color-warn)]/40 bg-[var(--color-warn)]/10 text-[var(--color-warn)]',
+    info: 'border-[var(--color-focus)]/40 bg-[var(--color-focus)]/10 text-[var(--color-focus)]',
+  }
+  return (
+    <div className={`rounded-[var(--radius-md)] border px-3 py-2.5 text-xs leading-relaxed ${tones[tone]}`}>
+      {children}
+    </div>
+  )
+}
+
+/** Carregamento com a forma do conteúdo que vem — evita o salto de layout. */
+export function Skeleton({ className = '' }: { className?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={`animate-pulse rounded-[var(--radius-md)] bg-[var(--color-border-default)] ${className}`}
+    />
   )
 }
 
@@ -144,10 +290,13 @@ export function Tooltip({
   content,
   children,
   testId,
+  align = 'center',
 }: {
   content: string
   children: ReactNode
   testId?: string
+  /** `end` alinha o balão à direita do gatilho — use perto da borda da tela. */
+  align?: 'center' | 'end'
 }) {
   const id = useId()
   return (
@@ -159,9 +308,16 @@ export function Tooltip({
         id={id}
         role="tooltip"
         data-testid={testId ? `${testId}-content` : undefined}
-        /* `invisible` além do `opacity-0`: só opacidade mantém o balão na
-           árvore de acessibilidade e clicável quando deveria estar escondido. */
-        className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-64 -translate-x-1/2 rounded-lg border border-[var(--color-edge)] bg-[#0d1327] px-3 py-2 text-[11px] leading-relaxed font-normal text-[#dbe3ff] opacity-0 shadow-xl shadow-black/50 transition-opacity duration-150 group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100"
+        /*
+         * `hidden` e não `invisible`: `visibility:hidden` continua ocupando
+         * espaço, e um balão de 288px num gatilho perto da borda esticava a
+         * página em 80px de rolagem horizontal — mesmo fechado.
+         *
+         * `max-w` prende o balão dentro da viewport no celular.
+         */
+        className={`pointer-events-none absolute bottom-full z-30 mb-2 hidden w-60 max-w-[calc(100vw-1.5rem)] rounded-[var(--radius-md)] border border-[var(--color-border-strong)] bg-[var(--color-surface-overlay)] px-3 py-2 text-xs leading-relaxed font-normal text-[var(--color-text-primary)] shadow-2xl shadow-black/60 group-focus-within:block group-hover:block sm:w-72 ${
+          align === 'end' ? 'right-0' : 'left-1/2 -translate-x-1/2'
+        }`}
       >
         {content}
       </span>
@@ -169,44 +325,59 @@ export function Tooltip({
   )
 }
 
-export function Callout({
-  tone,
-  children,
-}: {
-  tone: 'error' | 'warn' | 'info'
-  children: ReactNode
-}) {
-  const tones = {
-    error: 'border-rose-500/40 bg-rose-500/10 text-rose-200',
-    warn: 'border-amber-400/40 bg-amber-400/10 text-amber-100',
-    info: 'border-sky-400/40 bg-sky-400/10 text-sky-100',
-  }
-  return <div className={`rounded-lg border px-3 py-2 text-xs ${tones[tone]}`}>{children}</div>
-}
+/* ------------------------------------------------------------------- modal */
 
-export function Button({
+/**
+ * Base de modal sobre o `<dialog>` nativo.
+ *
+ * `showModal()` entrega foco preso, fechar no `Esc` e backdrop inerte de
+ * graça. Uma `div role="dialog"` só ganha isso com bastante código, e
+ * costuma ganhar errado.
+ */
+export function Modal({
+  open,
+  onClose,
+  labelledBy,
+  testId,
+  variant = 'full',
   children,
-  onClick,
-  variant = 'primary',
-  disabled,
 }: {
+  open: boolean
+  onClose: () => void
+  /** id do título do modal — vira o nome acessível do diálogo. */
+  labelledBy: string
+  testId?: string
+  /**
+   * `full` para conteúdo que precisa da tela toda (tabela de comparação).
+   * `centered` vira cartão a partir de `sm` — conteúdo curto numa tela cheia
+   * de 1440px deixa um vazio enorme no meio.
+   */
+  variant?: 'full' | 'centered'
   children: ReactNode
-  onClick: () => void
-  variant?: 'primary' | 'ghost'
-  disabled?: boolean
 }) {
-  const styles =
-    variant === 'primary'
-      ? 'bg-[var(--color-accent)] text-[#08102a] hover:brightness-110'
-      : 'border border-[var(--color-edge)] text-[var(--color-muted)] hover:text-white hover:border-[var(--color-accent)]'
+  const ref = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const dialog = ref.current
+    if (!dialog) return
+    if (open && !dialog.open) dialog.showModal()
+    if (!open && dialog.open) dialog.close()
+  }, [open])
+
+  const shape =
+    variant === 'full'
+      ? 'm-0 h-dvh max-h-none w-screen max-w-none'
+      : 'm-0 h-dvh max-h-none w-screen max-w-none sm:m-auto sm:h-auto sm:max-h-[min(90dvh,44rem)] sm:w-[min(42rem,calc(100vw-3rem))] sm:rounded-[var(--radius-xl)] sm:border sm:border-[var(--color-border-default)] sm:shadow-2xl sm:shadow-black/60'
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`rounded-lg px-3 py-2 text-xs font-semibold whitespace-nowrap transition disabled:cursor-not-allowed disabled:opacity-40 ${styles}`}
+    <dialog
+      ref={ref}
+      aria-labelledby={labelledBy}
+      data-testid={testId}
+      onClose={onClose}
+      className={`bg-[var(--color-surface-base)] p-0 text-[var(--color-text-primary)] ${shape}`}
     >
       {children}
-    </button>
+    </dialog>
   )
 }

@@ -30,6 +30,11 @@ export const ALAKAZAM: SpeciesFixture = {
 
 export const ALL_SPECIES = [VULPIX, ALAKAZAM]
 
+/** Como a UI exibe o número da Pokédex: `#037`, com zeros à esquerda. */
+export function dexNumber(species: SpeciesFixture): string {
+  return `#${String(species.id).padStart(3, '0')}`
+}
+
 /** Resposta da PokeAPI no formato que `src/data/pokeapi.ts` consome. */
 export function toPokeApiPayload(species: SpeciesFixture) {
   return {

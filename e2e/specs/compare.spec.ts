@@ -134,13 +134,14 @@ test.describe('modal de comparação', () => {
     await montar(app, [FOCADO, LIXO])
     await app.validateButton.click()
 
-    // `focado` tem 32 em SpA, `lixo` tem 4 — o verde vai para focado.
+    // `focado` tem 32 em SpA, `lixo` tem 4 — o ▲ vai para focado.
+    // Asserção pelo marcador, não pela classe: o destaque não pode depender só de cor.
     const idFocado = 'alakazam-100-1-0'
     const idLixo = 'alakazam-100-1-1'
-    await expect(app.compareCell('spa', idFocado)).toHaveClass(/text-emerald-300/)
-    await expect(app.compareCell('spa', idLixo)).not.toHaveClass(/text-emerald-300/)
+    await expect(app.compareCell('spa', idFocado)).toContainText('▲')
+    await expect(app.compareCell('spa', idLixo)).not.toContainText('▲')
     // E em Atk é o contrário.
-    await expect(app.compareCell('atk', idLixo)).toHaveClass(/text-emerald-300/)
+    await expect(app.compareCell('atk', idLixo)).toContainText('▲')
   })
 
   test('avisa quando algum espécime ficou ambíguo', async ({ app }) => {

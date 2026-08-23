@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test'
 import { expect } from '@playwright/test'
-import type { SpeciesFixture } from '../fixtures/species'
+import { dexNumber, type SpeciesFixture } from '../fixtures/species'
 import {
   STAT_KEYS,
   STAT_LABELS,
@@ -92,11 +92,11 @@ export class CalculatorPage {
   }
 
   get qualityInput(): Locator {
-    return this.page.getByLabel('Quality (multiplicador)')
+    return this.page.getByLabel('Quality', { exact: true })
   }
 
   get ivTotalInput(): Locator {
-    return this.page.getByLabel('IV total (de 192)')
+    return this.page.getByLabel('IV total /192')
   }
 
   statInput(key: StatKey): Locator {
@@ -117,7 +117,7 @@ export class CalculatorPage {
     const { species, growths, level, quality, withIvTotal = true, nickname } = spec
     const stats = statsOf(species.baseStats, growths, level, quality)
 
-    if (!(await this.speciesPanel.getByText(`#${species.id}`).count())) {
+    if (!(await this.speciesPanel.getByText(dexNumber(species)).count())) {
       await this.searchSpecies(species.slug)
     }
 
@@ -273,5 +273,51 @@ export class CalculatorPage {
 
   async pressEscape(): Promise<void> {
     await this.page.keyboard.press('Escape')
+  }
+
+  // --- tutorial ----------------------------------------------------------
+
+  get tutorial(): Locator {
+    return this.page.getByTestId('tutorial-modal')
+  }
+
+  get tutorialTitle(): Locator {
+    return this.page.getByTestId('tutorial-title')
+  }
+
+  get tutorialButton(): Locator {
+    return this.page.getByRole('button', { name: 'Ver o tutorial' })
+  }
+
+  get tutorialNext(): Locator {
+    return this.tutorial.getByRole('button', { name: 'Avançar' })
+  }
+
+  get tutorialBack(): Locator {
+    return this.tutorial.getByRole('button', { name: 'Voltar' })
+  }
+
+  get tutorialSkip(): Locator {
+    return this.tutorial.getByRole('button', { name: 'Pular' })
+  }
+
+  get tutorialStart(): Locator {
+    return this.tutorial.getByRole('button', { name: 'Começar' })
+  }
+
+  /** Passo atual conforme o indicador de progresso (`aria-current="step"`). */
+  get tutorialCurrentDot(): Locator {
+    return this.tutorial.locator('[aria-current="step"]')
+  }
+
+  async tutorialGoTo(index: number): Promise<void> {
+    await this.tutorial.getByRole('button', { name: new RegExp(`^Passo ${index + 1}:`) }).click()
+  }
+
+  /** `true` quando o navegador já registrou que o tutorial foi visto. */
+  async onboardingSeen(): Promise<boolean> {
+    return this.page.evaluate(
+      () => localStorage.getItem('pokeivcalc:onboarding:seen') === 'true',
+    )
   }
 }

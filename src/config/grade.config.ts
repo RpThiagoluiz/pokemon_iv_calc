@@ -31,13 +31,19 @@ export const KEY_STAT_WEIGHT_THRESHOLD = 0.5
 /** Quantos IVs perfeitos em stats principais acendem a tag de destaque. */
 export const PERFECT_ROLL_MIN_COUNT = 2
 
-/** Cor por grade, aplicada nos cards da UI. */
+/**
+ * Rampa perceptual do pior para o melhor grade.
+ *
+ * Todas medidas contra as superfícies escuras do app — pior caso 6,32:1 (o
+ * `D` sobre o overlay). A rampa anterior reprovava: o `D` `#6b7280` dava
+ * 3,66:1. A letra do grade é sempre exibida junto da cor.
+ */
 export const GRADE_COLORS: Record<Grade, string> = {
-  D: '#6b7280',
-  C: '#94a3b8',
-  B: '#38bdf8',
-  A: '#34d399',
-  'A+': '#a3e635',
-  S: '#fbbf24',
-  SS: '#f472b6',
+  D: '#94a3b8',
+  C: '#7dd3fc',
+  B: '#5eead4',
+  A: '#86efac',
+  'A+': '#bef264',
+  S: '#fcd34d',
+  SS: '#f0abfc',
 }
