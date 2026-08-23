@@ -28,7 +28,8 @@ export function SpecimenPanel({
 
       <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         <Field label="Level">
-          <NumberInput value={form.level} min={1} max={100} onChange={(v) => set('level', v)} />
+          {/* Sem teto: o jogo passa de 100 (visto em campo um Cloyster level 119). */}
+          <NumberInput value={form.level} min={1} onChange={(v) => set('level', v)} />
         </Field>
         <Field label="Quality" hint="ex.: 1.42">
           <NumberInput
@@ -39,7 +40,7 @@ export function SpecimenPanel({
           />
         </Field>
         <Field label={`IV total /${IV_TOTAL_MAX}`} hint="opcional">
-          <TextInput value={form.ivTotal} placeholder="90" onChange={(v) => set('ivTotal', v)} />
+          <TextInput value={form.ivTotal} placeholder="ex.: 128" onChange={(v) => set('ivTotal', v)} />
         </Field>
       </div>
 

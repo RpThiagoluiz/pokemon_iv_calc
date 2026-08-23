@@ -41,6 +41,17 @@ export interface SpecimenInput {
   baseStats: Stats
   level: number
   quality: number
+  /**
+   * Casas decimais com que o jogo exibiu a quality.
+   *
+   * O jogo arredonda: "1.56" pode ser qualquer coisa em [1.555, 1.565). Como a
+   * quality entra na fórmula elevada a um expoente, esse erro de 0,3% desloca
+   * os stats em ±1 e faz a inversão não fechar. Informando as casas, o solver
+   * procura dentro da janela em vez de cravar o valor exibido.
+   *
+   * `null` = tratar como valor exato.
+   */
+  qualityDecimals?: number | null
   /** Stats finais exibidos no jogo. */
   stats: Stats
   /** O `xxx` de `xxx/192`. `null` quando o usuário não quer restringir pela soma. */
@@ -70,4 +81,9 @@ export interface SolveResult {
   impossibleStats: StatKey[]
   /** Mensagem legível quando algo não fecha. */
   reason: string | null
+  /**
+   * Faixa de quality que realmente explica os stats — mais precisa que a
+   * exibida pelo jogo. `null` quando a quality foi tratada como exata.
+   */
+  qualityRange: { min: number; max: number } | null
 }

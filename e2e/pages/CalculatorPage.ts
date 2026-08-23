@@ -131,7 +131,9 @@ export class CalculatorPage {
 
     await this.nicknameInput.fill(nickname ?? '')
     await this.levelInput.fill(String(level))
-    await this.qualityInput.fill(String(quality))
+    // 4 casas encolhem a janela de arredondamento da quality quase a zero, o
+    // que mantém os testes determinísticos (ver QUALITY_CASAS_MIN no App).
+    await this.qualityInput.fill(quality.toFixed(4))
     await this.ivTotalInput.fill(withIvTotal ? String(ivTotalOf(growths)) : '')
     for (const key of STAT_KEYS) await this.statInput(key).fill(String(stats[key]))
 

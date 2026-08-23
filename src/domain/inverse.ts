@@ -1,4 +1,4 @@
-import { SOLUTION_COUNT_CAP } from '../config/formula.config'
+import { EXPONENTS, SOLUTION_COUNT_CAP } from '../config/formula.config'
 import { calcStat, statFactor } from './formula'
 import {
   GROWTH_MAX,
@@ -134,8 +134,9 @@ function constrainBySum(
  * fator `k` é pequeno e os intervalos ficam largos), o resultado é uma faixa
  * por stat — ambiguidade matemática, não falha.
  */
-export function solveGrowths(input: SpecimenInput): SolveResult {
-  const { baseStats, level, quality, stats, ivTotal } = input
+/** Resolve para UM valor exato de quality. É o núcleo; a janela chama isto. */
+function solveAtQuality(input: SpecimenInput, quality: number): SolveResult {
+  const { baseStats, level, stats, ivTotal } = input
 
   if (!Number.isFinite(level) || level <= 0) {
     return failure('Informe um level maior que zero.')
@@ -156,7 +157,9 @@ export function solveGrowths(input: SpecimenInput): SolveResult {
     const labels = impossibleStats.map((key) => STAT_LABELS[key]).join(', ')
     return failure(
       `Nenhum growth de ${GROWTH_MIN} a ${GROWTH_MAX} reproduz o valor de ${labels}. ` +
-        'Confira o stat digitado, a quality e o level.',
+        'Confira o que digitou. Se estiver tudo certo, o mais provável é que os base ' +
+        'stats desta espécie no jogo sejam diferentes dos da PokeAPI — dá para ' +
+        'corrigi-los no painel Pokémon, acima.',
       impossibleStats,
     )
   }
@@ -191,6 +194,7 @@ export function solveGrowths(input: SpecimenInput): SolveResult {
     solutionCount: count,
     impossibleStats: [],
     reason: null,
+    qualityRange: { min: quality, max: quality },
   }
 }
 
@@ -201,6 +205,7 @@ function failure(reason: string, impossibleStats: StatKey[] = []): SolveResult {
     solutionCount: 0,
     impossibleStats,
     reason,
+    qualityRange: null,
   }
 }
 
@@ -210,4 +215,107 @@ export function ivTotalRange(growths: Stats<GrowthRange>): { min: number; max: n
     (acc, key) => ({ min: acc.min + growths[key].min, max: acc.max + growths[key].max }),
     { min: 0, max: 0 },
   )
+}
+
+/**
+ * Janela de quality implícita no número que o jogo mostrou.
+ *
+ * "1.56" com 2 casas significa qualquer valor em [1.555, 1.565).
+ */
+export function qualityWindow(
+  quality: number,
+  decimals: number | null | undefined,
+): { min: number; max: number } {
+  if (decimals == null || !Number.isFinite(decimals) || decimals < 0) {
+    return { min: quality, max: quality }
+  }
+  const meia = 0.5 * Math.pow(10, -decimals)
+  return { min: Math.max(0, quality - meia), max: quality + meia }
+}
+
+/**
+ * Fronteiras onde algum stat muda de growth viável dentro da janela.
+ *
+ * Entre duas fronteiras consecutivas o conjunto de candidatos é constante, então
+ * basta resolver uma vez por sub-intervalo. Isso é exato — amostrar a janela num
+ * passo fixo perderia faixas estreitas, e elas são justamente o caso comum.
+ */
+function qualityBreakpoints(input: SpecimenInput, janela: { min: number; max: number }): number[] {
+  const { baseStats, level, stats } = input
+  const pontos = new Set<number>([janela.min, janela.max])
+
+  for (const key of STAT_KEYS) {
+    const e = EXPONENTS[key]
+    const L = level / 100
+    for (let g = GROWTH_MIN; g <= GROWTH_MAX; g++) {
+      const corpo = (baseStats[key] + 2 * g) * L
+      if (corpo <= 0) continue
+      // round(corpo · q^e) = S  =>  q = ((S ± 0.5)/corpo)^(1/e)
+      for (const alvo of [stats[key] - 0.5, stats[key] + 0.5]) {
+        const razao = alvo / corpo
+        if (razao <= 0) continue
+        const q = Math.pow(razao, 1 / e)
+        if (q > janela.min && q < janela.max) pontos.add(q)
+      }
+    }
+  }
+  return [...pontos].sort((a, b) => a - b)
+}
+
+/**
+ * Descobre os growths a partir dos stats exibidos.
+ *
+ * Quando `qualityDecimals` é informado, varre a janela de arredondamento da
+ * quality: o jogo mostra "1.56" para qualquer valor em [1.555, 1.565), e como a
+ * quality é elevada a um expoente esse erro desloca os stats em ±1. Cravar o
+ * valor exibido faz espécimes perfeitamente válidos parecerem impossíveis.
+ *
+ * O resultado une os growths viáveis de toda a janela e devolve, em
+ * `qualityRange`, a faixa de quality que de fato explica os stats — quase sempre
+ * mais precisa do que a que o jogo mostrou.
+ */
+export function solveGrowths(input: SpecimenInput): SolveResult {
+  const janela = qualityWindow(input.quality, input.qualityDecimals)
+  if (janela.min === janela.max) return solveAtQuality(input, input.quality)
+
+  const fronteiras = qualityBreakpoints(input, janela)
+  const uniao = {} as Stats<Set<number>>
+  for (const key of STAT_KEYS) uniao[key] = new Set<number>()
+
+  let total = 0
+  let qMin = Infinity
+  let qMax = -Infinity
+  let ultimaFalha: SolveResult | null = null
+
+  for (let i = 0; i < fronteiras.length - 1; i++) {
+    const meio = (fronteiras[i] + fronteiras[i + 1]) / 2
+    const r = solveAtQuality(input, meio)
+    if (r.status === 'noSolution' || !r.growths) {
+      ultimaFalha ??= r
+      continue
+    }
+    total = Math.min(SOLUTION_COUNT_CAP, total + r.solutionCount)
+    qMin = Math.min(qMin, fronteiras[i])
+    qMax = Math.max(qMax, fronteiras[i + 1])
+    for (const key of STAT_KEYS) for (const g of r.growths[key].values) uniao[key].add(g)
+  }
+
+  if (total === 0) {
+    return ultimaFalha ?? failure('Nenhuma quality dentro da precisão exibida explica esses stats.')
+  }
+
+  const growths = {} as Stats<GrowthRange>
+  for (const key of STAT_KEYS) {
+    const values = [...uniao[key]].sort((a, b) => a - b)
+    growths[key] = { min: values[0], max: values[values.length - 1], values }
+  }
+
+  return {
+    status: total === 1 ? 'exact' : 'ambiguous',
+    growths,
+    solutionCount: total,
+    impossibleStats: [],
+    reason: null,
+    qualityRange: { min: qMin, max: qMax },
+  }
 }

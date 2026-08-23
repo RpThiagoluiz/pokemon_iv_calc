@@ -25,15 +25,26 @@ function Stat({
   )
 }
 
+/** Formata a faixa refinada: "1,5638 – 1,5650". */
+function faixa(r: { min: number; max: number }): string {
+  const f = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })
+  return `${f(r.min)} – ${f(r.max)}`
+}
+
 export function PowerCard({
   power,
   statSum,
   quality,
+  qualityRange,
 }: {
   power: number
   statSum: number
   quality: number
+  /** Faixa que a inversão apurou — mais precisa que o número exibido no jogo. */
+  qualityRange?: { min: number; max: number } | null
 }) {
+  // Só vale mostrar quando a inversão apertou a faixa além do que o jogo mostra.
+  const refinada = qualityRange && qualityRange.max > qualityRange.min ? qualityRange : null
   return (
     <Panel
       testId="power-panel"
@@ -51,7 +62,7 @@ export function PowerCard({
           testId="quality-value"
           label="Quality"
           value={String(quality)}
-          hint="multiplicador de raridade"
+          hint={refinada ? `na verdade entre ${faixa(refinada)}` : 'multiplicador de raridade'}
         />
       </div>
     </Panel>

@@ -1,0 +1,91 @@
+{
+  "_leia": [
+    "Especimes REAIS coletados no jogo. Sao a evidencia que valida os expoentes de",
+    "src/config/formula.config.ts. Cobertos por tests/specimens.test.ts.",
+    "",
+    "ESTADO EM 2026-08-23: os dois CONFIRMAM os expoentes 0,95 (HP/Vel) e 0,80",
+    "(demais). Eles so pareciam refuta-los porque a quality exibida pelo jogo e",
+    "arredondada — ver a secao 'A janela de quality' em",
+    ".claude/skills/poke-formula/SKILL.md.",
+    "",
+    "Os base stats foram conferidos contra o pokepedia do jogo e batem com a PokeAPI."
+  ],
+  "especimes": [
+    {
+      "especie": "cloyster",
+      "level": 119,
+      "quality": 1.56,
+      "ivTotalInformado": null,
+      "baseStatsFonte": "pokeapi (conferido contra o pokepedia do jogo)",
+      "baseStats": {
+        "hp": 50,
+        "atk": 95,
+        "def": 180,
+        "spa": 85,
+        "spd": 45,
+        "spe": 70
+      },
+      "stats": {
+        "hp": 193,
+        "atk": 243,
+        "def": 361,
+        "spa": 203,
+        "spd": 131,
+        "spe": 197
+      },
+      "nota": "Level acima de 100 — o jogo nao para em 100.",
+      "qualityDecimals": 2,
+      "qualityReal": [
+        1.5638,
+        1.565
+      ],
+      "growthsResolvidos": {
+        "hp": 28,
+        "atk": 24,
+        "def": 16,
+        "spa": 17,
+        "spd": 16,
+        "spe": 19
+      },
+      "ivTotalResolvido": 120
+    },
+    {
+      "especie": "vileplume",
+      "level": 70,
+      "quality": 1.51,
+      "ivTotalInformado": null,
+      "baseStatsFonte": "pokeapi (conferido contra o pokepedia do jogo)",
+      "baseStats": {
+        "hp": 75,
+        "atk": 80,
+        "def": 85,
+        "spa": 110,
+        "spd": 90,
+        "spe": 50
+      },
+      "stats": {
+        "hp": 107,
+        "atk": 132,
+        "def": 93,
+        "spa": 129,
+        "spd": 105,
+        "spe": 104
+      },
+      "nota": "Level 70 — mostra que o problema nao era exclusivo de level alto.",
+      "qualityDecimals": 2,
+      "qualityReal": [
+        1.5107,
+        1.5117
+      ],
+      "growthsResolvidos": {
+        "hp": 14,
+        "atk": 28,
+        "def": 5,
+        "spa": 11,
+        "spd": 9,
+        "spe": 25
+      },
+      "ivTotalResolvido": 92
+    }
+  ]
+}

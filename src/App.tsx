@@ -21,6 +21,23 @@ import { STAT_KEYS, type SpecimenInput, type Stats } from './domain/types'
 import { useSpecies } from './hooks/useSpecies'
 import { useTutorial } from './hooks/useTutorial'
 
+/**
+ * Precisão da quality, em casas decimais, a partir do que o usuário digitou.
+ *
+ * O jogo arredonda, então "1.56" quer dizer [1.555, 1.565). Contar as casas do
+ * que ele copiou é a forma honesta de saber a precisão: quem colar "1.5638"
+ * ganha uma janela menor, sem precisar configurar nada.
+ *
+ * O piso de 2 casas existe porque é assim que o jogo exibe. Sem ele, digitar
+ * "1" seria lido como ±0,5 — uma janela absurda que tornaria tudo ambíguo.
+ */
+const QUALITY_CASAS_MIN = 2
+
+function decimais(value: string): number {
+  const m = value.trim().replace(',', '.').match(/\.(\d+)$/)
+  return Math.max(QUALITY_CASAS_MIN, m ? m[1].length : 0)
+}
+
 /** Converte o texto do formulário em número, ou `null` se estiver vazio/inválido. */
 function num(value: string): number | null {
   const trimmed = value.trim()
@@ -63,6 +80,7 @@ export default function App() {
   const parsed = useMemo(() => {
     const level = num(form.level)
     const quality = num(form.quality)
+    const qualityDecimals = quality === null ? null : decimais(form.quality)
     const stats = {} as Stats
     let missing = false
     for (const key of STAT_KEYS) {
@@ -70,7 +88,7 @@ export default function App() {
       if (value === null) missing = true
       stats[key] = value ?? 0
     }
-    return { level, quality, stats, missing, ivTotal: num(form.ivTotal) }
+    return { level, quality, qualityDecimals, stats, missing, ivTotal: num(form.ivTotal) }
   }, [form])
 
   const ready =
@@ -83,6 +101,7 @@ export default function App() {
             baseStats: species.baseStats,
             level: parsed.level!,
             quality: parsed.quality!,
+            qualityDecimals: parsed.qualityDecimals,
             stats: parsed.stats,
             ivTotal: parsed.ivTotal,
           }
@@ -184,6 +203,7 @@ export default function App() {
                   power={statSum * parsed.quality!}
                   statSum={statSum}
                   quality={parsed.quality!}
+                  qualityRange={solved?.qualityRange}
                 />
               </>
             )}
