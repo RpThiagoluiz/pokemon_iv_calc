@@ -57,11 +57,19 @@ test.describe('primeira visita', () => {
     await expect(app.tutorial).toContainText(`Passo 1 de ${TOTAL}`)
   })
 
+  /*
+   * O `<dialog>` some da tela assim que o navegador o fecha, mas quem grava no
+   * localStorage é o handler React do evento `close`. Ler o storage direto
+   * depois de `toBeHidden()` é uma corrida — daí o `expect.poll`.
+   */
+  const esperarMarcadoComoVisto = (app: { onboardingSeen: () => Promise<boolean> }) =>
+    expect.poll(() => app.onboardingSeen()).toBe(true)
+
   test('Pular fecha, marca como visto e não reabre no reload', async ({ app, page }) => {
     await app.tutorialSkip.click()
 
     await expect(app.tutorial).toBeHidden()
-    expect(await app.onboardingSeen()).toBe(true)
+    await esperarMarcadoComoVisto(app)
 
     await page.reload()
 
@@ -73,14 +81,14 @@ test.describe('primeira visita', () => {
     await app.tutorialStart.click()
 
     await expect(app.tutorial).toBeHidden()
-    expect(await app.onboardingSeen()).toBe(true)
+    await esperarMarcadoComoVisto(app)
   })
 
   test('Esc fecha e marca como visto', async ({ app }) => {
     await app.pressEscape()
 
     await expect(app.tutorial).toBeHidden()
-    expect(await app.onboardingSeen()).toBe(true)
+    await esperarMarcadoComoVisto(app)
   })
 })
 

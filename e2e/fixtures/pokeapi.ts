@@ -21,6 +21,17 @@ export async function stubPokeApi(page: Page): Promise<ApiStub> {
   const calls: string[] = []
   let shouldFail = false
 
+  /*
+   * O app carrega Inter e JetBrains Mono do Google Fonts. `page.goto` espera o
+   * evento `load`, que espera essa folha de estilo — se o CDN estiver lento, o
+   * teste estoura o timeout por motivo alheio ao código. Cortamos a requisição
+   * e a página cai na pilha de fontes do sistema, que é o fallback declarado.
+   */
+  await page.route('https://fonts.googleapis.com/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/css', body: '' }),
+  )
+  await page.route('https://fonts.gstatic.com/**', (route) => route.abort())
+
   await page.route(ENDPOINT, async (route: Route) => {
     const slug = decodeURIComponent(new URL(route.request().url()).pathname.split('/').pop() ?? '')
     calls.push(slug)

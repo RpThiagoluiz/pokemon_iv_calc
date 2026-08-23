@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+# Um push novo na mesma PR cancela a execução anterior: sem fila de runs velhos.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  qualidade:
+    name: Lint, tipos e testes de domínio
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # `npm run build` roda `tsc -b` antes do Vite: type-checa src, e2e e config.
+      - name: Tipos e build
+        run: npm run build
+
+      - name: Testes de domínio
+        run: npm run test
+
+  e2e:
+    name: Testes de ponta a ponta
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Versão do Playwright
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # O download do Chromium é o passo mais lento; cacheado por versão do Playwright.
+      - name: Cache do navegador
+        id: cache-browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      - name: Instalar Chromium
+        if: steps.cache-browser.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      # As libs de sistema ficam fora do cache, então precisam ser instaladas sempre.
+      - name: Instalar dependências de sistema
+        if: steps.cache-browser.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      # `CI=true` faz o playwright.config falhar em `test.only`, tentar 2 vezes
+      # e subir o servidor de dev do zero em vez de reusar um existente.
+      - name: Playwright
+        run: npm run test:e2e
+
+      - name: Guardar o relatório quando falhar
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
