@@ -30,9 +30,8 @@ export function candidateGrowths(
   displayedStat: number,
   level: number,
   quality: number,
-  mode: SpecimenInput['mode'],
 ): number[] {
-  const k = statFactor(stat, level, quality, mode)
+  const k = statFactor(stat, level, quality)
   if (!Number.isFinite(k) || k <= 0) return []
 
   const lo = ((displayedStat - 0.5) / k - base) / 2
@@ -44,7 +43,7 @@ export function candidateGrowths(
 
   const values: number[] = []
   for (let g = from; g <= to; g++) {
-    if (calcStat(stat, base, g, level, quality, mode) === displayedStat) values.push(g)
+    if (calcStat(stat, base, g, level, quality) === displayedStat) values.push(g)
   }
   return values
 }
@@ -136,7 +135,7 @@ function constrainBySum(
  * por stat — ambiguidade matemática, não falha.
  */
 export function solveGrowths(input: SpecimenInput): SolveResult {
-  const { baseStats, level, quality, stats, ivTotal, mode } = input
+  const { baseStats, level, quality, stats, ivTotal } = input
 
   if (!Number.isFinite(level) || level <= 0) {
     return failure('Informe um level maior que zero.')
@@ -149,7 +148,7 @@ export function solveGrowths(input: SpecimenInput): SolveResult {
   }
 
   let sets = STAT_KEYS.map((key) =>
-    candidateGrowths(key, baseStats[key], stats[key], level, quality, mode),
+    candidateGrowths(key, baseStats[key], stats[key], level, quality),
   )
 
   const impossibleStats = STAT_KEYS.filter((_, i) => sets[i].length === 0)
@@ -157,7 +156,7 @@ export function solveGrowths(input: SpecimenInput): SolveResult {
     const labels = impossibleStats.map((key) => STAT_LABELS[key]).join(', ')
     return failure(
       `Nenhum growth de ${GROWTH_MIN} a ${GROWTH_MAX} reproduz o valor de ${labels}. ` +
-        'Confira o stat digitado, a quality, o level e o modo de fórmula.',
+        'Confira o stat digitado, a quality e o level.',
       impossibleStats,
     )
   }

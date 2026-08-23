@@ -24,13 +24,6 @@ export const GROWTH_MAX = 32
 export const IV_TOTAL_MIN = GROWTH_MIN * STAT_KEYS.length
 export const IV_TOTAL_MAX = GROWTH_MAX * STAT_KEYS.length
 
-/**
- * Modo de fórmula.
- * - `official`: expoente 1 em todos os stats (fórmula publicada no pokepedia).
- * - `discord`: 0.95 em HP/Vel e 0.80 nos demais (hipótese da comunidade, não confirmada).
- */
-export type FormulaMode = 'official' | 'discord'
-
 export interface Species {
   id: number
   /** Slug normalizado usado como chave de cache, ex.: `mr-mime`. */
@@ -52,7 +45,6 @@ export interface SpecimenInput {
   stats: Stats
   /** O `xxx` de `xxx/192`. `null` quando o usuário não quer restringir pela soma. */
   ivTotal: number | null
-  mode: FormulaMode
 }
 
 /** Faixa de growths viáveis para um stat. */

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 
 export function Panel({
   title,
@@ -134,8 +134,11 @@ export function Badge({ children, color }: { children: ReactNode; color?: string
 }
 
 /**
- * Tooltip em hover e foco. O `aria-label` no gatilho garante que o conteúdo
- * chegue a quem usa leitor de tela, já que o balão em si fica `aria-hidden`.
+ * Tooltip em hover e foco.
+ *
+ * Usa `aria-describedby` e não `aria-label`: um tooltip *descreve* o elemento,
+ * não o renomeia. Com `aria-label` o texto virava o nome acessível do gatilho —
+ * o que, além de errado, fazia buscas por label baterem no tooltip.
  */
 export function Tooltip({
   content,
@@ -146,14 +149,15 @@ export function Tooltip({
   children: ReactNode
   testId?: string
 }) {
+  const id = useId()
   return (
     <span className="group relative inline-flex">
-      <span tabIndex={0} aria-label={content} data-testid={testId} className="cursor-help">
+      <span tabIndex={0} aria-describedby={id} data-testid={testId} className="cursor-help">
         {children}
       </span>
       <span
+        id={id}
         role="tooltip"
-        aria-hidden
         data-testid={testId ? `${testId}-content` : undefined}
         /* `invisible` além do `opacity-0`: só opacidade mantém o balão na
            árvore de acessibilidade e clicável quando deveria estar escondido. */
@@ -200,7 +204,7 @@ export function Button({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-lg px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${styles}`}
+      className={`rounded-lg px-3 py-2 text-xs font-semibold whitespace-nowrap transition disabled:cursor-not-allowed disabled:opacity-40 ${styles}`}
     >
       {children}
     </button>

@@ -6,7 +6,6 @@ import {
   STAT_LABELS,
   ivTotalOf,
   statsOf,
-  type FormulaMode,
   type StatKey,
   type Stats,
 } from '../support/formula'
@@ -16,9 +15,10 @@ export interface SpecimenSpec {
   growths: Stats
   level: number
   quality: number
-  mode?: FormulaMode
   /** Informar o IV total colapsa a ambiguidade. Passe `false` para omitir. */
   withIvTotal?: boolean
+  /** Apelido usado ao mandar o espécime para a comparação. */
+  nickname?: string
 }
 
 /**
@@ -45,11 +45,8 @@ export class CalculatorPage {
   }
 
   get speciesInput(): Locator {
-    return this.page.getByPlaceholder('vulpix')
-  }
-
-  async openTab(tab: 'Calculadora' | 'Calibrar expoentes'): Promise<void> {
-    await this.page.getByRole('button', { name: tab, exact: true }).click()
+    // Pelo label, não pelo placeholder: o campo Apelido também sugere "Vulpix".
+    return this.page.getByLabel('Buscar Pokémon')
   }
 
   // --- espécie -----------------------------------------------------------
@@ -70,7 +67,7 @@ export class CalculatorPage {
   }
 
   get speciesError(): Locator {
-    return this.speciesPanel.getByText('não encontrada')
+    return this.speciesPanel.getByText('não encontrado')
   }
 
   baseStatInput(key: StatKey): Locator {
@@ -106,29 +103,25 @@ export class CalculatorPage {
     return this.page.getByLabel(STAT_LABELS[key], { exact: true })
   }
 
-  formulaModeButton(mode: FormulaMode): Locator {
-    const label = mode === 'official' ? 'Oficial (× quality)' : 'Discord (quality^exp)'
-    return this.page.getByRole('button', { name: label })
+  get nicknameInput(): Locator {
+    return this.page.getByLabel('Apelido')
   }
 
-  async setFormulaMode(mode: FormulaMode): Promise<void> {
-    await this.formulaModeButton(mode).click()
-  }
-
-  /** O botão ativo ganha a borda de destaque — é assim que a UI marca o modo. */
-  async activeFormulaMode(): Promise<FormulaMode> {
-    const cls = (await this.formulaModeButton('official').getAttribute('class')) ?? ''
-    return cls.includes('accent') ? 'official' : 'discord'
-  }
-
-  /** Busca a espécie e digita o espécime derivado dos growths informados. */
+  /**
+   * Busca a espécie e digita o espécime derivado dos growths informados.
+   *
+   * Só busca quando a espécie ainda não está carregada — buscar de novo
+   * limparia o formulário e a comparação.
+   */
   async enterSpecimen(spec: SpecimenSpec): Promise<Stats> {
-    const { species, growths, level, quality, mode = 'discord', withIvTotal = true } = spec
-    const stats = statsOf(species.baseStats, growths, level, quality, mode)
+    const { species, growths, level, quality, withIvTotal = true, nickname } = spec
+    const stats = statsOf(species.baseStats, growths, level, quality)
 
-    await this.searchSpecies(species.slug)
-    if (mode !== 'discord') await this.setFormulaMode(mode)
+    if (!(await this.speciesPanel.getByText(`#${species.id}`).count())) {
+      await this.searchSpecies(species.slug)
+    }
 
+    await this.nicknameInput.fill(nickname ?? '')
     await this.levelInput.fill(String(level))
     await this.qualityInput.fill(String(quality))
     await this.ivTotalInput.fill(withIvTotal ? String(ivTotalOf(growths)) : '')
@@ -139,6 +132,7 @@ export class CalculatorPage {
 
   async readSpecimenForm(): Promise<Record<string, string>> {
     const entries: Array<[string, string]> = [
+      ['nickname', await this.nicknameInput.inputValue()],
       ['level', await this.levelInput.inputValue()],
       ['quality', await this.qualityInput.inputValue()],
       ['ivTotal', await this.ivTotalInput.inputValue()],
@@ -192,43 +186,92 @@ export class CalculatorPage {
     return this.page.getByTestId('perfect-rolls-tag-content')
   }
 
-  weightSlider(key: StatKey): Locator {
-    return this.gradePanel.getByRole('slider').nth(STAT_KEYS.indexOf(key))
+  get ivStatusTooltip(): Locator {
+    return this.page.getByTestId('iv-status-content')
   }
 
   get powerValue(): Locator {
     return this.page.getByTestId('power-value')
   }
 
-  get qualityTier(): Locator {
-    return this.page.getByTestId('quality-tier')
+  get qualityValue(): Locator {
+    return this.page.getByTestId('quality-value')
   }
 
   get placeholderMessage(): Locator {
     return this.page.getByText('Preencha level, quality e os seis stats')
   }
 
-  // --- calibração --------------------------------------------------------
+  // --- comparação --------------------------------------------------------
 
-  get calibrationPanel(): Locator {
-    return this.page.getByTestId('calibration-panel')
+  get comparePanel(): Locator {
+    return this.page.getByTestId('compare-panel')
   }
 
-  async addCurrentSpecimenToCalibration(): Promise<void> {
-    await this.openTab('Calibrar expoentes')
-    await this.page.getByRole('button', { name: '+ Usar o espécime atual' }).click()
-    await this.openTab('Calculadora')
+  get compareList(): Locator {
+    return this.page.getByTestId('compare-list')
   }
 
-  async clearCalibration(): Promise<void> {
-    await this.calibrationPanel.getByRole('button', { name: 'Limpar' }).click()
+  get compareItems(): Locator {
+    return this.compareList.getByRole('listitem')
   }
 
-  /** Faixa viável de expoente lida da tabela de calibração, ex.: `"0.80 – 0.87"`. */
-  async calibrationRange(key: StatKey): Promise<string> {
-    const row = this.calibrationPanel.getByRole('row').filter({
-      has: this.page.getByRole('cell', { name: STAT_LABELS[key], exact: true }),
-    })
-    return (await row.getByRole('cell').nth(1).innerText()).trim()
+  get addToCompareButton(): Locator {
+    return this.comparePanel.getByRole('button', { name: '+ Comparar' })
+  }
+
+  get validateButton(): Locator {
+    return this.comparePanel.getByRole('button', { name: 'Validar comparação' })
+  }
+
+  get clearCompareButton(): Locator {
+    return this.comparePanel.getByRole('button', { name: 'Limpar comparação' })
+  }
+
+  /** Preenche um espécime e manda para a comparação, em um passo. */
+  async addToCompare(spec: SpecimenSpec): Promise<void> {
+    await this.enterSpecimen(spec)
+    await this.addToCompareButton.click()
+  }
+
+  async removeFromCompare(nickname: string): Promise<void> {
+    await this.comparePanel.getByRole('button', { name: `Remover ${nickname}` }).click()
+  }
+
+  // --- modal de comparação -----------------------------------------------
+
+  get compareModal(): Locator {
+    return this.page.getByTestId('compare-modal')
+  }
+
+  get compareTable(): Locator {
+    return this.page.getByTestId('compare-table')
+  }
+
+  /** Apelidos na ordem do ranking, do melhor para o pior. */
+  async podiumOrder(): Promise<string[]> {
+    const rows = this.page.getByTestId(/^podium-\d+$/)
+    const count = await rows.count()
+    const names: string[] = []
+    for (let i = 0; i < count; i++) {
+      names.push((await rows.nth(i).locator('div.truncate').innerText()).trim())
+    }
+    return names
+  }
+
+  gradeGroup(grade: string): Locator {
+    return this.page.getByTestId(`group-${grade}`)
+  }
+
+  compareCell(key: StatKey, entryId: string): Locator {
+    return this.page.getByTestId(`cell-${key}-${entryId}`)
+  }
+
+  async closeCompareModal(): Promise<void> {
+    await this.compareModal.getByRole('button', { name: 'Fechar' }).click()
+  }
+
+  async pressEscape(): Promise<void> {
+    await this.page.keyboard.press('Escape')
   }
 }

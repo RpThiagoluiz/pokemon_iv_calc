@@ -1,17 +1,12 @@
 import { EXPONENTS } from '../config/formula.config'
-import { STAT_KEYS, type FormulaMode, type StatKey, type Stats } from './types'
+import { STAT_KEYS, type StatKey, type Stats } from './types'
 
 /**
  * Fator comum da fórmula para um stat: `(level / 100) × quality^exp`.
  * Isolado porque a inversão precisa dividir por ele.
  */
-export function statFactor(
-  stat: StatKey,
-  level: number,
-  quality: number,
-  mode: FormulaMode,
-): number {
-  return (level / 100) * Math.pow(quality, EXPONENTS[mode][stat])
+export function statFactor(stat: StatKey, level: number, quality: number): number {
+  return (level / 100) * Math.pow(quality, EXPONENTS[stat])
 }
 
 /**
@@ -23,9 +18,8 @@ export function calcStat(
   growth: number,
   level: number,
   quality: number,
-  mode: FormulaMode,
 ): number {
-  return Math.round((base + 2 * growth) * statFactor(stat, level, quality, mode))
+  return Math.round((base + 2 * growth) * statFactor(stat, level, quality))
 }
 
 export function calcAllStats(
@@ -33,11 +27,10 @@ export function calcAllStats(
   growths: Stats,
   level: number,
   quality: number,
-  mode: FormulaMode,
 ): Stats {
   const out = {} as Stats
   for (const key of STAT_KEYS) {
-    out[key] = calcStat(key, baseStats[key], growths[key], level, quality, mode)
+    out[key] = calcStat(key, baseStats[key], growths[key], level, quality)
   }
   return out
 }

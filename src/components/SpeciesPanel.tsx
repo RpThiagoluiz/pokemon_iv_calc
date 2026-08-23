@@ -1,23 +1,31 @@
-import { useState } from 'react'
-import type { UseSpeciesResult } from '../hooks/useSpecies'
-import { STAT_KEYS, STAT_LABELS } from '../domain/types'
-import { Badge, Button, Callout, Field, NumberInput, Panel, TextInput } from './ui'
+import { useState } from 'react';
+import type { UseSpeciesResult } from '../hooks/useSpecies';
+import { STAT_KEYS, STAT_LABELS } from '../domain/types';
+import {
+  Badge,
+  Button,
+  Callout,
+  Field,
+  NumberInput,
+  Panel,
+  TextInput,
+} from './ui';
 
 export function SpeciesPanel({
   species: s,
   onSearch,
 }: {
-  species: UseSpeciesResult
+  species: UseSpeciesResult;
   /** Buscar troca de espécie e é o App que limpa o espécime anterior. */
-  onSearch: (name: string) => void
+  onSearch: (name: string) => void;
 }) {
-  const [query, setQuery] = useState('vulpix')
+  const [query, setQuery] = useState('');
 
   return (
     <Panel
       testId="species-panel"
-      title="Espécie"
-      hint="Base stats vêm da PokeAPI. Se divergirem do jogo, edite — a correção fica salva."
+      title="Pokémon"
+      hint="Busque a espécie. Os base stats vêm da PokeAPI — se divergirem do jogo, edite e a correção fica salva."
       right={
         s.species && (
           <div className="flex gap-2">
@@ -26,7 +34,10 @@ export function SpeciesPanel({
                 Reverter
               </Button>
             )}
-            <Button variant="ghost" onClick={() => void s.load(s.species!.slug, true)}>
+            <Button
+              variant="ghost"
+              onClick={() => void s.load(s.species!.slug, true)}
+            >
               Recarregar
             </Button>
           </div>
@@ -35,7 +46,7 @@ export function SpeciesPanel({
     >
       <div className="flex items-end gap-2">
         <div className="flex-1">
-          <Field label="Nome do Pokémon">
+          <Field label="Buscar Pokémon">
             <TextInput
               value={query}
               onChange={setQuery}
@@ -67,7 +78,10 @@ export function SpeciesPanel({
             )}
             <div>
               <div className="text-lg font-semibold text-white capitalize">
-                {s.species.name} <span className="text-[var(--color-muted)]">#{s.species.id}</span>
+                {s.species.name}{' '}
+                <span className="text-[var(--color-muted)]">
+                  #{s.species.id}
+                </span>
               </div>
               <div className="mt-1 flex gap-1">
                 {s.species.types.map((t) => (
@@ -79,7 +93,7 @@ export function SpeciesPanel({
 
           <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-6">
             {STAT_KEYS.map((key) => {
-              const overridden = s.overriddenStats.includes(key)
+              const overridden = s.overriddenStats.includes(key);
               return (
                 <Field key={key} label={`Base ${STAT_LABELS[key]}`}>
                   <NumberInput
@@ -89,20 +103,20 @@ export function SpeciesPanel({
                     onChange={(v) => s.setBaseStat(key, Number(v) || 0)}
                   />
                 </Field>
-              )
+              );
             })}
           </div>
 
           {s.overriddenStats.length > 0 && (
             <div className="mt-3">
               <Callout tone="warn">
-                {s.overriddenStats.map((k) => STAT_LABELS[k]).join(', ')} sobrescrito(s)
-                manualmente — o valor da PokeAPI foi ignorado.
+                {s.overriddenStats.map((k) => STAT_LABELS[k]).join(', ')}{' '}
+                sobrescrito(s) manualmente — o valor da PokeAPI foi ignorado.
               </Callout>
             </div>
           )}
         </>
       )}
     </Panel>
-  )
+  );
 }

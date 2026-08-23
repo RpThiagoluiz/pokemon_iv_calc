@@ -58,7 +58,7 @@ function toSpecies(raw: RawPokemon): Species {
 
 export class SpeciesNotFoundError extends Error {
   constructor(name: string) {
-    super(`Espécie "${name}" não encontrada na PokeAPI.`)
+    super(`Pokémon "${name}" não encontrado. Confira o nome e tente de novo.`)
     this.name = 'SpeciesNotFoundError'
   }
 }

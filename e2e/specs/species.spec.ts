@@ -3,7 +3,7 @@ import { ALAKAZAM, VULPIX } from '../fixtures/species'
 import type { CalculatorPage } from '../pages/CalculatorPage'
 import { STAT_KEYS, growths } from '../support/formula'
 
-const CAMPOS = ['level', 'quality', 'ivTotal', ...STAT_KEYS]
+const CAMPOS = ['nickname', 'level', 'quality', 'ivTotal', ...STAT_KEYS]
 
 async function preencherVulpix(app: CalculatorPage) {
   await app.enterSpecimen({
@@ -114,12 +114,17 @@ test.describe('trocar de Pokémon limpa o espécime anterior', () => {
     expect((await app.readSpecimenForm()).level).toBe('78')
   })
 
-  test('o modo de fórmula sobrevive à limpeza, por ser preferência', async ({ app }) => {
-    await preencherVulpix(app)
-    await app.setFormulaMode('official')
+  test('o apelido também é limpo', async ({ app }) => {
+    await app.enterSpecimen({
+      species: VULPIX,
+      growths: growths([12, 30, 3, 28, 19, 9]),
+      level: 78,
+      quality: 1.45,
+      nickname: 'meu Vulpix',
+    })
 
     await app.searchSpecies(ALAKAZAM.slug)
 
-    expect(await app.activeFormulaMode()).toBe('official')
+    expect((await app.readSpecimenForm()).nickname).toBe('')
   })
 })

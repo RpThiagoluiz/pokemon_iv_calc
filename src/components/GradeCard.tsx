@@ -1,28 +1,10 @@
 import { GRADE_COLORS } from '../config/grade.config'
+import { explainPerfectRolls, listStats } from '../domain/explain'
 import type { GradeResult } from '../domain/grade'
-import { GROWTH_MAX, STAT_KEYS, STAT_LABELS, type StatKey, type Stats } from '../domain/types'
-import { Badge, Button, Panel, Tooltip } from './ui'
+import type { StatKey } from '../domain/types'
+import { Badge, Panel, Tooltip } from './ui'
 
-/** "SpA e Vel" — lista em português, com "e" antes do último. */
-function listStats(stats: StatKey[]): string {
-  const labels = stats.map((key) => STAT_LABELS[key])
-  if (labels.length <= 1) return labels.join('')
-  return `${labels.slice(0, -1).join(', ')} e ${labels[labels.length - 1]}`
-}
-
-export function GradeCard({
-  grade,
-  weights,
-  isCustom,
-  onWeightChange,
-  onResetWeights,
-}: {
-  grade: GradeResult
-  weights: Stats
-  isCustom: boolean
-  onWeightChange: (key: keyof Stats, value: number) => void
-  onResetWeights: () => void
-}) {
+export function GradeCard({ grade, keyStatNames }: { grade: GradeResult; keyStatNames: StatKey[] }) {
   const color = GRADE_COLORS[grade.maxGrade]
   const perfect = grade.perfectRolls
 
@@ -31,7 +13,6 @@ export function GradeCard({
       testId="grade-panel"
       title="Grade de distribuição"
       hint="Avalia se os IVs caíram nos stats que importam para esta espécie. Não considera quality."
-      right={isCustom && <Button variant="ghost" onClick={onResetWeights}>Pesos automáticos</Button>}
     >
       <div className="flex items-center gap-5">
         <div
@@ -67,61 +48,25 @@ export function GradeCard({
           </div>
           {grade.isRange && (
             <p className="mt-2 text-[11px] text-[var(--color-muted)]">
-              Os IVs estão ambíguos, então o grade é um intervalo. Informe o IV total ou suba
-              de level para fechar.
+              Os IVs estão ambíguos, então o grade é um intervalo. Informe o IV total ou suba de
+              level para fechar.
             </p>
           )}
-          {(perfect.qualifies || isCustom) && (
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {perfect.qualifies && (
-                <Tooltip
-                  testId="perfect-rolls-tag"
-                  content={
-                    `Tier ${grade.label}, mas com ${perfect.stats.length} IVs perfeitos no lugar certo: ` +
-                    `${listStats(perfect.stats)} em ${GROWTH_MAX}/${GROWTH_MAX}. ` +
-                    'O grade é uma média de todos os stats, então ele dilui esse acerto — ' +
-                    'na prática este Pokémon vale mais que outro do mesmo tier com os IVs espalhados.'
-                  }
-                >
-                  <Badge color="#f472b6">
-                    ★ {perfect.stats.length} IVs perfeitos no lugar certo
-                  </Badge>
-                </Tooltip>
-              )}
-              {isCustom && <Badge color="#fbbf24">pesos manuais</Badge>}
+          {perfect.qualifies && (
+            <div className="mt-2">
+              <Tooltip testId="perfect-rolls-tag" content={explainPerfectRolls(grade)}>
+                <Badge color="#f472b6">★ {perfect.stats.length} IVs perfeitos no lugar certo</Badge>
+              </Tooltip>
             </div>
           )}
         </div>
       </div>
 
-      <div className="mt-5 border-t border-[var(--color-edge)] pt-4">
-        <p className="mb-3 text-xs text-[var(--color-muted)]">
-          Peso de cada stat — derivado dos base stats da espécie. Ajuste se você usa este
-          Pokémon num papel diferente.
-        </p>
-        <div className="grid grid-cols-1 gap-x-5 gap-y-2 sm:grid-cols-2">
-          {STAT_KEYS.map((key) => (
-            <label key={key} className="flex items-center gap-2">
-              <span className="w-8 shrink-0 text-xs font-semibold text-[var(--color-muted)]">
-                {STAT_LABELS[key]}
-              </span>
-              {/* min-w-0: sem isso o range não encolhe abaixo da largura intrínseca e vaza da célula */}
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={weights[key]}
-                onChange={(e) => onWeightChange(key, Number(e.target.value))}
-                className="w-full min-w-0 flex-1 accent-[var(--color-accent)]"
-              />
-              <span className="w-9 shrink-0 text-right font-mono text-[11px] text-white">
-                {weights[key].toFixed(2)}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
+      <p className="mt-5 border-t border-[var(--color-edge)] pt-4 text-[11px] text-[var(--color-muted)]">
+        Os pesos saem dos base stats da espécie, então o papel dela define a nota. Para este
+        Pokémon o que mais conta é <strong className="text-white">{listStats(keyStatNames)}</strong>
+        .
+      </p>
     </Panel>
   )
 }

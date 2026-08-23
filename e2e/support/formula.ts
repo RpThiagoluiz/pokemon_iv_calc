@@ -24,12 +24,7 @@ export const STAT_LABELS: Record<StatKey, string> = {
   spe: 'Vel',
 }
 
-export const EXPONENTS: Record<'official' | 'discord', Stats> = {
-  official: { hp: 1, atk: 1, def: 1, spa: 1, spd: 1, spe: 1 },
-  discord: { hp: 0.95, atk: 0.8, def: 0.8, spa: 0.8, spd: 0.8, spe: 0.95 },
-}
-
-export type FormulaMode = keyof typeof EXPONENTS
+export const EXPONENTS: Stats = { hp: 0.95, atk: 0.8, def: 0.8, spa: 0.8, spd: 0.8, spe: 0.95 }
 
 /** stat = round( (base + 2·growth) × (level/100) × quality^exp ) */
 export function statOf(
@@ -38,21 +33,18 @@ export function statOf(
   growth: number,
   level: number,
   quality: number,
-  mode: FormulaMode = 'discord',
 ): number {
-  return Math.round((base + 2 * growth) * (level / 100) * Math.pow(quality, EXPONENTS[mode][key]))
+  return Math.round((base + 2 * growth) * (level / 100) * Math.pow(quality, EXPONENTS[key]))
 }
 
-export function statsOf(
-  baseStats: Stats,
-  growths: Stats,
-  level: number,
-  quality: number,
-  mode: FormulaMode = 'discord',
-): Stats {
+export function statsOf(baseStats: Stats, growths: Stats, level: number, quality: number): Stats {
   return Object.fromEntries(
-    STAT_KEYS.map((key) => [key, statOf(key, baseStats[key], growths[key], level, quality, mode)]),
+    STAT_KEYS.map((key) => [key, statOf(key, baseStats[key], growths[key], level, quality)]),
   ) as Stats
+}
+
+export function sumOf(stats: Stats): number {
+  return STAT_KEYS.reduce((acc, key) => acc + stats[key], 0)
 }
 
 export function ivTotalOf(growths: Stats): number {

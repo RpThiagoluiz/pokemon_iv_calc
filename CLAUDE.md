@@ -22,6 +22,8 @@ Duas camadas, com fronteiras deliberadas:
 | **unidade** | `tests/*.test.ts` (Vitest) | `src/domain/` — a matemática, incluindo property test de round-trip |
 | **e2e** | `e2e/specs/*.spec.ts` (Playwright) | o app montado: UI ↔ domínio ↔ PokeAPI ↔ `localStorage` |
 
+Cuidado com seletores frouxos: `getByPlaceholder('vulpix')` batia também no campo Apelido, e um `aria-label` de tooltip fazia `getByLabel('Level')` casar com a tag de status. Prefira label exato e `data-testid` para painéis.
+
 Regras do e2e:
 
 1. **A PokeAPI é sempre interceptada** (`e2e/fixtures/pokeapi.ts`). E2E que depende de rede externa falha por motivo alheio ao código. O stub também conta chamadas, o que permite testar o cache.
@@ -39,18 +41,20 @@ Power = (HP + Atk + Def + SpA + SpD + Vel) × quality
 ```
 
 - `growth` é inteiro em `[1, 32]`; a soma dos 6 é o `xxx/192` exibido no jogo.
-- `exp` tem duas hipóteses, ambas suportadas via `FormulaMode`:
-  - `official` — `exp = 1` para todos os stats (fórmula publicada em `pokepedia/systems/power`)
-  - `discord` — `0.95` para HP e Vel, `0.80` para Atk/Def/SpA/SpD (hipótese de um dev na comunidade)
+- `exp` é `0.95` para HP e Vel, `0.80` para os demais (`EXPONENTS` em `src/config/formula.config.ts`). A fórmula publicada não divulga o expoente — estes vêm de simulações da comunidade e continuam sendo **hipótese**, ainda que não haja mais toggle na UI.
 
 ## Regras de arquitetura
 
 1. **`src/domain/` é matemática pura.** Zero import de React, zero acesso a rede, zero `localStorage`. Tudo ali é testado em `tests/`.
 2. **Nunca escreva fórmula dentro de componente React.** Constantes vão em `src/config/`, lógica em `src/domain/`. Se um número mágico aparecer em `src/components/`, está no lugar errado.
-3. Os expoentes do modo `discord` são **hipótese não confirmada**. Qualquer alteração neles exige validação contra espécimes reais em `tests/fixtures/specimens.json` — não ajuste "no olho".
+3. Os expoentes são **hipótese não confirmada**. Qualquer alteração neles exige validação contra espécimes reais — não ajuste "no olho".
 4. **Nunca invente base stats.** Eles vêm da PokeAPI ou de input manual do usuário. Se a PokeAPI divergir do jogo, a UI permite corrigir e o override é persistido.
 5. Cuidado com arredondamento na inversão: `round(x) = S ⟹ x ∈ [S−0.5, S+0.5)`. O intervalo é **fechado à esquerda e aberto à direita**; usar `<=` nos dois lados gera falsos candidatos.
-6. **Trocar de espécie limpa o espécime** (level, quality, IV total e os seis stats). Manter os dados de outro Pokémon faz o app calcular IVs de um espécime que não existe. A limpeza é feita em `searchSpecies` no `App.tsx`, depois que a busca resolve e só quando o slug muda de verdade — recarregar a mesma espécie ou errar o nome preserva o que estava preenchido, e o modo de fórmula sobrevive por ser preferência do usuário.
+6. **Trocar de espécie limpa o espécime e a comparação.** Manter dados de outro Pokémon faz o app calcular IVs de um espécime que não existe, e a comparação é travada numa espécie só. A limpeza é feita em `searchSpecies` no `App.tsx`, depois que a busca resolve e só quando o slug muda de verdade — recarregar a mesma espécie ou errar o nome preserva o que estava preenchido.
+7. **O grade não é ajustável.** Os pesos vêm dos base stats e ponto; não reintroduza sliders. O valor do grade é justamente ser um critério fixo entre espécimes.
+8. **Toda tag precisa de tooltip que se explique** para *aquele* espécime. Os textos ficam em `src/domain/explain.ts`, como funções puras testadas — nunca hard-coded no componente.
+9. **Não exiba dado que você não tem.** O tier de quality foi removido porque as faixas eram palpite e o site oficial bloqueia scraping. Melhor não mostrar nada do que mostrar errado.
+10. A lista de comparação é **só de sessão** — sem `localStorage`. Máximo de 5 (`COMPARE_MAX`), mínimo de 2 para validar.
 
 ## Convenções
 

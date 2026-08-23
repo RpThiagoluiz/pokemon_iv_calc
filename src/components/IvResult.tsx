@@ -1,6 +1,13 @@
-import { GROWTH_MAX, STAT_KEYS, STAT_LABELS, type SolveResult, type Stats } from '../domain/types'
 import { ivTotalRange } from '../domain/inverse'
-import { Badge, Callout, Panel } from './ui'
+import {
+  GROWTH_MAX,
+  IV_TOTAL_MAX,
+  STAT_KEYS,
+  STAT_LABELS,
+  type SolveResult,
+  type Stats,
+} from '../domain/types'
+import { Badge, Callout, Panel, Tooltip } from './ui'
 
 /** Barra 0–32 do growth. Faixas ambíguas viram um bloco translúcido sobre o mínimo. */
 function GrowthBar({ min, max, weight }: { min: number; max: number; weight: number }) {
@@ -30,9 +37,12 @@ function GrowthBar({ min, max, weight }: { min: number; max: number; weight: num
 export function IvResult({
   result,
   weights,
+  explanation,
 }: {
   result: SolveResult
   weights: Stats
+  /** Por que a inversão saiu assim para ESTE espécime — vira o tooltip da tag. */
+  explanation: string
 }) {
   if (result.status === 'noSolution') {
     return (
@@ -53,12 +63,12 @@ export function IvResult({
       hint={
         exact
           ? 'Solução única: estes são os IVs exatos do seu Pokémon.'
-          : `${result.solutionCount.toLocaleString('pt-BR')} combinações compatíveis. Suba de level e recalcule para estreitar.`
+          : 'Vários growths reproduzem esses stats. Suba de level e recalcule para estreitar.'
       }
       right={
-        <span data-testid="iv-status">
+        <Tooltip testId="iv-status" content={explanation}>
           <Badge color={exact ? '#34d399' : '#fbbf24'}>{exact ? 'exato' : 'ambíguo'}</Badge>
-        </span>
+        </Tooltip>
       }
     >
       <div className="space-y-3">
@@ -70,10 +80,7 @@ export function IvResult({
                 {STAT_LABELS[key]}
               </span>
               <GrowthBar min={g.min} max={g.max} weight={weights[key]} />
-              <span
-                data-testid={`iv-${key}`}
-                className="text-right font-mono text-sm text-white"
-              >
+              <span data-testid={`iv-${key}`} className="text-right font-mono text-sm text-white">
                 {g.min === g.max ? g.min : `${g.min}–${g.max}`}
                 <span className="text-[var(--color-muted)]">/{GROWTH_MAX}</span>
               </span>
@@ -86,7 +93,7 @@ export function IvResult({
         <span className="text-xs text-[var(--color-muted)]">IV total</span>
         <span data-testid="iv-total" className="font-mono text-lg text-white">
           {total.min === total.max ? total.min : `${total.min}–${total.max}`}
-          <span className="text-sm text-[var(--color-muted)]">/192</span>
+          <span className="text-sm text-[var(--color-muted)]">/{IV_TOTAL_MAX}</span>
         </span>
       </div>
     </Panel>

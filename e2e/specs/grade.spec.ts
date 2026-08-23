@@ -95,30 +95,16 @@ test.describe('tag de IVs perfeitos no lugar certo', () => {
   })
 })
 
-test.describe('pesos manuais', () => {
-  test('redefinir os pesos muda o grade e marca que são manuais', async ({ app }) => {
-    await app.enterSpecimen({ species: ALAKAZAM, growths: growths([32, 32, 32, 4, 32, 4]), ...exato })
-    await expect(app.gradeLabel).toHaveText('D')
+test.describe('o grade não é ajustável', () => {
+  test('não existe slider de peso no painel', async ({ app }) => {
+    await app.enterSpecimen({ species: ALAKAZAM, growths: fill(16), ...exato })
 
-    // Declara Atk como o que importa: o mesmo espécime vira outro bicho.
-    await app.weightSlider('spa').fill('0')
-    await app.weightSlider('spe').fill('0')
-    await app.weightSlider('atk').fill('1')
-
-    await expect(app.gradePanel).toContainText('pesos manuais')
-    await expect(app.gradeLabel).not.toHaveText('D')
+    await expect(app.gradePanel.getByRole('slider')).toHaveCount(0)
   })
 
-  test('os pesos manuais sobrevivem a uma troca de espécie e voltam', async ({ app }) => {
-    await app.enterSpecimen({ species: ALAKAZAM, growths: fill(16), ...exato })
-    await app.weightSlider('atk').fill('1')
-    await expect(app.gradePanel).toContainText('pesos manuais')
-
-    await app.searchSpecies('vulpix')
-    await app.searchSpecies('alakazam')
+  test('o painel declara quais stats pesam para esta espécie', async ({ app }) => {
     await app.enterSpecimen({ species: ALAKAZAM, growths: fill(16), ...exato })
 
-    await expect(app.gradePanel).toContainText('pesos manuais')
-    await expect(app.weightSlider('atk')).toHaveValue('1')
+    await expect(app.gradePanel).toContainText('SpA e Vel')
   })
 })
