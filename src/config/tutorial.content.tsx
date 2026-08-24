@@ -103,6 +103,26 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     ),
   },
   {
+    short: 'O futuro',
+    title: 'Vale a pena subir este?',
+    body: (
+      <>
+        <p>
+          No card de Power tem <Term>Ver evolução</Term>. Ele abre uma projeção: como os stats e o
+          Power ficam conforme o Pokémon sobe de level, até o <Term>1000</Term>.
+        </p>
+        <p>
+          Aparecem três marcos de leitura rápida — agora, <Formula>+20</Formula> e{' '}
+          <Formula>+40</Formula> — e você pode digitar qualquer level alvo para ver o número exato.
+        </p>
+        <p>
+          Como o level entra linear na fórmula, <Term>dobrar o level dobra os stats</Term>. O que
+          muda entre dois Pokémon é de onde eles partem — e é isso que a projeção deixa ver.
+        </p>
+      </>
+    ),
+  },
+  {
     short: 'Comparar',
     title: 'Escolha entre os seus',
     body: (

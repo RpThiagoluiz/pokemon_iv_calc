@@ -5,7 +5,7 @@ import { expect, test } from '../fixtures/test'
  * `src/`. Mudou o conteúdo? Este número muda junto, de propósito: é a chance
  * de reler se os passos ainda contam a história certa.
  */
-const TOTAL = 5
+const TOTAL = 6
 
 test.describe('primeira visita', () => {
   // Único spec que NÃO marca o onboarding como visto: aqui queremos vê-lo abrir.

@@ -14,8 +14,8 @@ Se te ajudou, **deixe uma ⭐ no repositório** — é o que mostra que vale con
 npm install
 npx playwright install chromium   # só na primeira vez, para o e2e
 npm run dev        # http://localhost:5173
-npm run test       # 72 testes de domínio (Vitest)
-npm run test:e2e   # 73 testes de ponta a ponta (Playwright)
+npm run test       # 101 testes de domínio (Vitest)
+npm run test:e2e   # 88 testes de ponta a ponta (Playwright)
 npm run build
 ```
 
@@ -42,6 +42,14 @@ Preencha um Pokémon, dê um apelido e clique em **+ Comparar**. Troque os dados
 A comparação é travada na espécie atual: trocar de Pokémon a limpa. A lista vale só para a sessão — recarregar a página zera.
 
 Se algum Pokémon ficou ambíguo, o painel avisa que a comparação é aproximada. Nesse caso o "melhor por stat" usa o **piso** da faixa, não o teto — ninguém ganha destaque por um valor que talvez não exista.
+
+## Futuro do Pokémon
+
+No card de Power, **Ver evolução** abre a projeção: stats e Power conforme o Pokémon sobe, até o level 1000.
+
+Três marcos dão a leitura rápida (agora, +20, +40) e você pode digitar qualquer level alvo. Dois gráficos — Power e os seis stats separados, porque as escalas são diferentes — mais tabelas de 20 em 20.
+
+Quando os IVs ou a quality ainda têm faixa, a projeção herda essa incerteza e mostra a área sombreada com o mínimo e o máximo possíveis, em vez de fingir um número exato.
 
 ## Grade D → SS
 
@@ -117,6 +125,6 @@ Publicado em **[pokeidleivcalc.netlify.app](https://pokeidleivcalc.netlify.app/)
 
 ## Contribuindo
 
-Abra uma issue ou PR em [RpThiagoluiz/pokemon_iv_calc](https://github.com/RpThiagoluiz/pokemon_iv_calc). O template de PR e o CI (lint, tipos, 72 testes de domínio e 73 de ponta a ponta) rodam sozinhos a cada abertura.
+Abra uma issue ou PR em [RpThiagoluiz/pokemon_iv_calc](https://github.com/RpThiagoluiz/pokemon_iv_calc). O template de PR e o CI (lint, tipos, 101 testes de domínio e 88 de ponta a ponta) rodam sozinhos a cada abertura.
 
 E se a ferramenta te poupou tempo, **[deixe uma ⭐](https://github.com/RpThiagoluiz/pokemon_iv_calc)**.

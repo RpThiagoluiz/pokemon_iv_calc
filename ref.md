@@ -1,3 +1,1 @@
-https://poke.idleworld.online/pokepedia/pokemon/vulpix
-
-Wiki do site
+- Mapa de up de pokemon talvez pegando o tipo dele e quais pokemons é mais facil matar. Levando em consideração imunidades, pokemons de duplo tipo.

@@ -96,7 +96,9 @@ export class CalculatorPage {
   // --- espécime ----------------------------------------------------------
 
   get levelInput(): Locator {
-    return this.page.getByLabel('Level')
+    // Exato: o modal de projeção tem "Level alvo" e os gráficos têm títulos
+    // acessíveis que citam "level". Sem `exact` isto casa com cinco elementos.
+    return this.page.getByLabel('Level', { exact: true })
   }
 
   get qualityInput(): Locator {
@@ -283,6 +285,59 @@ export class CalculatorPage {
 
   async pressEscape(): Promise<void> {
     await this.page.keyboard.press('Escape')
+  }
+
+  // --- projeção ----------------------------------------------------------
+
+  get seeProjectionButton(): Locator {
+    return this.page.getByRole('button', { name: 'Ver evolução' })
+  }
+
+  get projectionModal(): Locator {
+    return this.page.getByTestId('projection-modal')
+  }
+
+  get targetLevelInput(): Locator {
+    return this.projectionModal.getByLabel('Level alvo', { exact: true })
+  }
+
+  get targetPower(): Locator {
+    return this.page.getByTestId('target-power')
+  }
+
+  get milestones(): Locator {
+    return this.page.getByTestId('milestones').getByRole('listitem')
+  }
+
+  get powerChart(): Locator {
+    return this.page.getByTestId('power-chart')
+  }
+
+  get statsChart(): Locator {
+    return this.page.getByTestId('stats-chart')
+  }
+
+  get projectionTable(): Locator {
+    return this.page.getByTestId('projection-table')
+  }
+
+  get stepsTable(): Locator {
+    return this.page.getByTestId('steps-table')
+  }
+
+  async openProjection(): Promise<void> {
+    await this.seeProjectionButton.click()
+    await expect(this.projectionModal).toBeVisible()
+  }
+
+  async setTargetLevel(level: number): Promise<void> {
+    await this.targetLevelInput.fill(String(level))
+  }
+
+  /** A tabela de 20 em 20 fica num `<details>`: fechada, some da árvore de a11y. */
+  async openStepsTable(): Promise<void> {
+    await this.projectionModal.getByText(/Ver de \d+ em \d+ levels/).click()
+    await expect(this.stepsTable).toBeVisible()
   }
 
   // --- tutorial ----------------------------------------------------------

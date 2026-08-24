@@ -101,6 +101,19 @@ A letra do grade é **sempre** exibida junto da cor.
 
 `Modal` usa `<dialog>` nativo com `showModal()` de propósito: foco preso, `Esc` e backdrop inerte de graça. Uma `div role="dialog"` só ganha isso com bastante código, e normalmente ganha errado.
 
+## Gráficos
+
+Regras da skill `dataviz` que já custaram correção aqui:
+
+- **Nunca dois eixos y.** Power (milhares) e stats (centenas) são **dois gráficos**. Um eixo só com duas escalas inventa correlação que não existe — é o anti-padrão nº 1.
+- **A paleta das séries é medida, não escolhida.** `SERIES_COLORS` em `src/config/chart.config.ts` passou nas seis checagens do `validate_palette.js` contra `#121829`. Ordem fixa, um stat sempre na mesma cor. Trocou? Rode o validador de novo.
+- **Legenda sempre com 2+ séries.** Cor nunca é o único sinal.
+- **O SVG mede o container.** `viewBox` fixo faz o texto escalar junto: 11 px viram ~6 px em 360 e ~16 px num desktop largo. `useMeasuredWidth` mantém 1 unidade = 1 pixel.
+- **Eixo y arredonda o passo, não o máximo.** `niceTop(max, linhas)`: arredondar o máximo joga 6.980 para 10.000 e desperdiça metade da altura.
+- **Rótulo do eixo abrevia; tooltip não.** `formatAxis` vs `formatValue` — no eixo cabe "7 mil", no tooltip o usuário quer 6.980.
+- **Não deixe dois pontos colados no fim.** Um marco a 2 levels do alvo desenha um trecho achatado que se lê como "parou de crescer".
+- **Tabela junto do gráfico.** É a visão acessível que a `dataviz` exige.
+
 ## Layout e responsivo
 
 Mobile-first. Breakpoints reais testados: **360 / 768 / 1024 / 1440**.
@@ -138,6 +151,7 @@ Mobile-first. Breakpoints reais testados: **360 / 768 / 1024 / 1440**.
 | esconder só com `opacity-0` | o elemento segue na árvore de acessibilidade e clicável. Some `invisible` junto. |
 | `Button` sem `whitespace-nowrap` | "+ Comparar" quebrou em duas linhas quando o painel apertou. |
 | seletor por placeholder no e2e | `getByPlaceholder('vulpix')` casou também com o campo Apelido ("ex.: Vulpix do hunt"). Use label exato ou `data-testid`. |
+| `getByLabel` sem `exact` | `getByLabel('Level')` passou a casar com "Level alvo" e com o `<title>` dos gráficos quando a projeção entrou — 19 testes caíram de uma vez. Todo label de campo é exato. |
 | `flex-1` em elemento que não encolhe | `<input type="range">` vazou da célula sem `min-w-0`. |
 | cor como único sinal | reprova a11y e some para daltônicos. |
 | `text-[11px]` / cores cruas na tela | fura a escala e o sistema de tokens. |

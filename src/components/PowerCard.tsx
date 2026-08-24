@@ -1,4 +1,4 @@
-import { Panel } from './ui'
+import { Button, Panel } from './ui'
 
 function Stat({
   label,
@@ -36,12 +36,15 @@ export function PowerCard({
   statSum,
   quality,
   qualityRange,
+  onSeeProjection,
 }: {
   power: number
   statSum: number
   quality: number
   /** Faixa que a inversão apurou — mais precisa que o número exibido no jogo. */
   qualityRange?: { min: number; max: number } | null
+  /** Ausente quando não há solução — sem IVs não há o que projetar. */
+  onSeeProjection?: () => void
 }) {
   // Só vale mostrar quando a inversão apertou a faixa além do que o jogo mostra.
   const refinada = qualityRange && qualityRange.max > qualityRange.min ? qualityRange : null
@@ -50,6 +53,13 @@ export function PowerCard({
       testId="power-panel"
       title="Power"
       hint="Soma dos stats exibidos × quality. Independente do grade de IV."
+      right={
+        onSeeProjection && (
+          <Button variant="ghost" onClick={onSeeProjection}>
+            Ver evolução
+          </Button>
+        )
+      }
     >
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Stat

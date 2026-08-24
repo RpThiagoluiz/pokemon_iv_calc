@@ -6,6 +6,7 @@ import { ExternalLink, GithubIcon } from './components/prose'
 import { HelpIcon, Tutorial } from './components/Tutorial'
 import { IvResult } from './components/IvResult'
 import { PowerCard } from './components/PowerCard'
+import { ProjectionModal } from './components/ProjectionModal'
 import { SpeciesPanel } from './components/SpeciesPanel'
 import { SpecimenPanel } from './components/SpecimenPanel'
 import { EMPTY_FORM, type SpecimenForm } from './components/specimenForm'
@@ -17,6 +18,7 @@ import { explainSolution } from './domain/explain'
 import { sumStats } from './domain/formula'
 import { autoWeights, gradeFromRanges, keyStats } from './domain/grade'
 import { ivTotalRange, solveGrowths } from './domain/inverse'
+import type { ProjectionInput } from './domain/projection'
 import { STAT_KEYS, type SpecimenInput, type Stats } from './domain/types'
 import { useSpecies } from './hooks/useSpecies'
 import { useTutorial } from './hooks/useTutorial'
@@ -52,6 +54,7 @@ export default function App() {
   const [form, setForm] = useState<SpecimenForm>(EMPTY_FORM)
   const [compareEntries, setCompareEntries] = useState<CompareEntry[]>([])
   const [compareOpen, setCompareOpen] = useState(false)
+  const [projectionOpen, setProjectionOpen] = useState(false)
 
   const slug = species.species?.slug ?? null
 
@@ -70,6 +73,7 @@ export default function App() {
       setForm(EMPTY_FORM)
       setCompareEntries([])
       setCompareOpen(false)
+      setProjectionOpen(false)
     }
   }
 
@@ -122,6 +126,19 @@ export default function App() {
   )
 
   const statSum = sumStats(parsed.stats)
+
+  /**
+   * A projeção reaproveita o que a inversão já descobriu: os growths e a faixa
+   * de quality refinada. Sem solução não há o que projetar.
+   */
+  const projection = useMemo<ProjectionInput | null>(() => {
+    if (!solved?.growths || !input) return null
+    return {
+      baseStats: species.baseStats,
+      growths: solved.growths,
+      quality: solved.qualityRange ?? { min: input.quality, max: input.quality },
+    }
+  }, [solved, input, species.baseStats])
 
   // --- comparação ---------------------------------------------------------
 
@@ -204,6 +221,7 @@ export default function App() {
                   statSum={statSum}
                   quality={parsed.quality!}
                   qualityRange={solved?.qualityRange}
+                  onSeeProjection={projection ? () => setProjectionOpen(true) : undefined}
                 />
               </>
             )}
@@ -248,6 +266,16 @@ export default function App() {
         open={compareOpen}
         onClose={() => setCompareOpen(false)}
       />
+
+      {projection && input && (
+        <ProjectionModal
+          input={projection}
+          currentLevel={input.level}
+          speciesName={species.species?.name ?? ''}
+          open={projectionOpen}
+          onClose={() => setProjectionOpen(false)}
+        />
+      )}
 
       <Tutorial tutorial={tutorial} />
     </div>
