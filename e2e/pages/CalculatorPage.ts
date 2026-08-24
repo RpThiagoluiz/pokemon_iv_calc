@@ -356,6 +356,51 @@ export class CalculatorPage {
     await expect(this.stepsTable).toBeVisible()
   }
 
+  // --- mapa de caça ------------------------------------------------------
+
+  get matchupPanel(): Locator {
+    return this.page.getByTestId('matchup-panel')
+  }
+
+  get seeMatchupButton(): Locator {
+    return this.page.getByRole('button', { name: 'Ver mapa' })
+  }
+
+  get matchupModal(): Locator {
+    return this.page.getByTestId('matchup-modal')
+  }
+
+  get matchupLoading(): Locator {
+    return this.page.getByTestId('matchup-loading')
+  }
+
+  get matchupBuckets(): Locator {
+    return this.page.getByTestId('matchup-buckets')
+  }
+
+  bucket(multiplier: number): Locator {
+    return this.page.getByTestId(`bucket-${multiplier}`)
+  }
+
+  offensiveTab(): Locator {
+    return this.matchupModal.getByRole('tab', { name: 'Quem eu mato fácil' })
+  }
+
+  defensiveTab(): Locator {
+    return this.matchupModal.getByRole('tab', { name: 'Quem me mata' })
+  }
+
+  async openMatchup(): Promise<void> {
+    await this.seeMatchupButton.click()
+    await expect(this.matchupModal).toBeVisible()
+    await expect(this.matchupBuckets).toBeVisible()
+  }
+
+  /** Chip de uma espécie dentro de um bucket. */
+  speciesChip(multiplier: number, slug: string): Locator {
+    return this.bucket(multiplier).getByRole('button', { name: new RegExp(slug, 'i') })
+  }
+
   // --- tutorial ----------------------------------------------------------
 
   get tutorial(): Locator {

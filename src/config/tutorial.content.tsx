@@ -123,6 +123,28 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
     ),
   },
   {
+    short: 'Caçar',
+    title: 'Contra quem lutar',
+    body: (
+      <>
+        <p>
+          Depois de buscar a espécie — sem precisar de mais nada — aparece o{' '}
+          <Term>Mapa de caça</Term>. Ele lista as espécies por vantagem de tipo: quem você
+          massacra em <Formula>×4</Formula>, quem resiste e quem é <Term>imune</Term>.
+        </p>
+        <p>
+          A conta leva em conta <Term>tipo duplo</Term> e imunidade, que é onde a intuição
+          falha: Terrestre não toca em nada Voador, mesmo que o outro tipo seja fraco a
+          Terrestre.
+        </p>
+        <p>
+          Tem também o lado inverso, <Term>quem me mata</Term> — e clicar em qualquer Pokémon
+          da lista carrega ele aqui no app.
+        </p>
+      </>
+    ),
+  },
+  {
     short: 'Comparar',
     title: 'Escolha entre os seus',
     body: (

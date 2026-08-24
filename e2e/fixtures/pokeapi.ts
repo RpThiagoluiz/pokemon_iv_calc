@@ -1,5 +1,5 @@
 import type { Page, Route } from '@playwright/test'
-import { ALL_SPECIES, toPokeApiPayload } from './species'
+import { ALL_SPECIES, toPokeApiPayload, toTypePayload } from './species'
 
 const ENDPOINT = 'https://pokeapi.co/api/v2/pokemon/**'
 
@@ -31,6 +31,23 @@ export async function stubPokeApi(page: Page): Promise<ApiStub> {
     route.fulfill({ status: 200, contentType: 'text/css', body: '' }),
   )
   await page.route('https://fonts.gstatic.com/**', (route) => route.abort())
+
+  // Os 18 endpoints de tipo alimentam o mapa de caça. Interceptados também:
+  // a regra de o e2e nunca sair para a rede vale para eles.
+  await page.route('https://pokeapi.co/api/v2/type/**', async (route: Route) => {
+    const tipo = decodeURIComponent(new URL(route.request().url()).pathname.split('/').pop() ?? '')
+    calls.push(`type:${tipo}`)
+    if (shouldFail) {
+      shouldFail = false
+      await route.abort('failed')
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(toTypePayload(tipo)),
+    })
+  })
 
   await page.route(ENDPOINT, async (route: Route) => {
     const slug = decodeURIComponent(new URL(route.request().url()).pathname.split('/').pop() ?? '')
