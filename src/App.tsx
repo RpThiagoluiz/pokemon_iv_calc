@@ -2,11 +2,14 @@ import { useMemo, useState } from 'react'
 import { CompareModal } from './components/CompareModal'
 import { ComparePanel } from './components/ComparePanel'
 import { GradeCard } from './components/GradeCard'
+import { MatchupModal } from './components/MatchupModal'
+import { MatchupPanel } from './components/MatchupPanel'
 import { ExternalLink, GithubIcon } from './components/prose'
 import { HelpIcon, Tutorial } from './components/Tutorial'
 import { IvResult } from './components/IvResult'
 import { PowerCard } from './components/PowerCard'
 import { ProjectionModal } from './components/ProjectionModal'
+import { ProjectionPanel } from './components/ProjectionPanel'
 import { SpeciesPanel } from './components/SpeciesPanel'
 import { SpecimenPanel } from './components/SpecimenPanel'
 import { EMPTY_FORM, type SpecimenForm } from './components/specimenForm'
@@ -22,6 +25,7 @@ import type { ProjectionInput } from './domain/projection'
 import { STAT_KEYS, type SpecimenInput, type Stats } from './domain/types'
 import { useSpecies } from './hooks/useSpecies'
 import { useTutorial } from './hooks/useTutorial'
+import { useTypeIndex } from './hooks/useTypeIndex'
 
 /**
  * Precisão da quality, em casas decimais, a partir do que o usuário digitou.
@@ -55,6 +59,8 @@ export default function App() {
   const [compareEntries, setCompareEntries] = useState<CompareEntry[]>([])
   const [compareOpen, setCompareOpen] = useState(false)
   const [projectionOpen, setProjectionOpen] = useState(false)
+  const [matchupOpen, setMatchupOpen] = useState(false)
+  const typeIndex = useTypeIndex()
 
   const slug = species.species?.slug ?? null
 
@@ -74,6 +80,7 @@ export default function App() {
       setCompareEntries([])
       setCompareOpen(false)
       setProjectionOpen(false)
+      setMatchupOpen(false)
     }
   }
 
@@ -221,9 +228,23 @@ export default function App() {
                   statSum={statSum}
                   quality={parsed.quality!}
                   qualityRange={solved?.qualityRange}
-                  onSeeProjection={projection ? () => setProjectionOpen(true) : undefined}
                 />
               </>
+            )}
+
+            {species.species && species.species.types.length > 0 && (
+              <MatchupPanel
+                types={species.species.types}
+                onOpen={() => setMatchupOpen(true)}
+              />
+            )}
+
+            {projection && input && (
+              <ProjectionPanel
+                input={projection}
+                currentLevel={input.level}
+                onOpen={() => setProjectionOpen(true)}
+              />
             )}
 
             {species.species && (
@@ -274,6 +295,17 @@ export default function App() {
           speciesName={species.species?.name ?? ''}
           open={projectionOpen}
           onClose={() => setProjectionOpen(false)}
+        />
+      )}
+
+      {species.species && (
+        <MatchupModal
+          types={species.species.types}
+          speciesName={species.species.name}
+          typeIndex={typeIndex}
+          open={matchupOpen}
+          onClose={() => setMatchupOpen(false)}
+          onSelectSpecies={(slug) => void searchSpecies(slug)}
         />
       )}
 

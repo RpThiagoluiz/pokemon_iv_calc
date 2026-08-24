@@ -29,6 +29,24 @@ test.describe('ação de evolução', () => {
   test('não aparece antes de preencher o Pokémon', async ({ app }) => {
     await app.searchSpecies('vulpix')
     await expect(app.seeProjectionButton).toBeHidden()
+    await expect(app.projectionPanel).toBeHidden()
+  })
+
+  test('tem painel próprio, com o mesmo peso do comparar', async ({ app }) => {
+    await app.enterSpecimen(EXATO)
+
+    await expect(app.projectionPanel).toContainText('Futuro do Pokémon')
+    // Botão primário, como o "+ Comparar" — não o fantasma que era antes.
+    await expect(app.seeProjectionButton).toHaveClass(/bg-\[var\(--accent\)\]/)
+  })
+
+  test('a prévia adianta os dois próximos marcos', async ({ app }) => {
+    await app.enterSpecimen(EXATO)
+
+    await expect(app.projectionPreview).toHaveCount(2)
+    await expect(app.projectionPreview.nth(0)).toContainText('Level 98')
+    await expect(app.projectionPreview.nth(1)).toContainText('Level 118')
+    await expect(app.projectionPreview.nth(0)).toContainText('de Power')
   })
 
   test('abre o modal e fecha no Esc', async ({ app }) => {
@@ -159,5 +177,61 @@ test.describe('trocar de espécie', () => {
 
     await expect(app.projectionModal).toBeHidden()
     await expect(app.seeProjectionButton).toBeHidden()
+  })
+})
+
+test.describe('precisão do level', () => {
+  test('o "?" ao lado de Level explica quando o resultado é confiável', async ({ app }) => {
+    await app.searchSpecies('vulpix')
+
+    await expect(app.levelHintTooltip).not.toBeVisible()
+    await app.levelHint.hover()
+
+    await expect(app.levelHintTooltip).toBeVisible()
+    await expect(app.levelHintTooltip).toContainText('Level 10 ou mais')
+  })
+
+  test('o tooltip não vira o nome do campo', async ({ app }) => {
+    await app.enterSpecimen(EXATO)
+    // Se o "?" estivesse dentro do <label>, o nome acessível levaria o texto
+    // do tooltip junto e este locator exato deixaria de casar.
+    await expect(app.levelInput).toHaveValue('78')
+  })
+})
+
+test.describe('sem teto de level', () => {
+  test('aceita um alvo bem acima de 1000', async ({ app }) => {
+    await soParaAbrir(app)
+
+    await app.setTargetLevel(5000)
+
+    await expect(app.projectionModal).toContainText('No level 5000')
+    await expect(app.targetPower).not.toHaveText('0')
+  })
+
+  test('o campo não anuncia teto nenhum', async ({ app }) => {
+    await soParaAbrir(app)
+    await expect(app.projectionModal).toContainText('sem teto')
+  })
+
+  test('span gigante não trava a tela: o passo cresce', async ({ app }) => {
+    await soParaAbrir(app)
+    await app.setTargetLevel(20000)
+    await app.openStepsTable()
+
+    const linhas = await app.stepsTable.getByRole('row').count()
+    expect(linhas).toBeLessThan(70) // cabeçalho + no máximo ~60 marcos
+  })
+})
+
+test.describe('formato do modal', () => {
+  test('é um cartão centrado, como o do tutorial', async ({ app, page }) => {
+    await soParaAbrir(app)
+
+    const modal = await app.projectionModal.boundingBox()
+    const vp = page.viewportSize()!
+    // Centrado: não encosta nas bordas laterais da janela.
+    expect(modal!.width).toBeLessThan(vp.width)
+    expect(modal!.x).toBeGreaterThan(0)
   })
 })

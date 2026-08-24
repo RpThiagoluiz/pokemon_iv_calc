@@ -27,7 +27,15 @@ export function SpecimenPanel({
       </Field>
 
       <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-        <Field label="Level">
+        <Field
+          label="Level"
+          tooltipTestId="level-hint"
+          tooltip={
+            'Level 10 ou mais dá um resultado bem mais preciso. Em level baixo o fator de ' +
+            'escala da fórmula é pequeno, então vários growths diferentes arredondam para o ' +
+            'mesmo stat exibido e a inversão devolve faixas em vez de valores exatos.'
+          }
+        >
           {/* Sem teto: o jogo passa de 100 (visto em campo um Cloyster level 119). */}
           <NumberInput value={form.level} min={1} onChange={(v) => set('level', v)} />
         </Field>

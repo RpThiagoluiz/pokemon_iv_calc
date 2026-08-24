@@ -113,6 +113,14 @@ export class CalculatorPage {
     return this.page.getByLabel(STAT_LABELS[key], { exact: true })
   }
 
+  get levelHint(): Locator {
+    return this.page.getByTestId('level-hint')
+  }
+
+  get levelHintTooltip(): Locator {
+    return this.page.getByTestId('level-hint-content')
+  }
+
   get nicknameInput(): Locator {
     return this.page.getByLabel('Apelido')
   }
@@ -293,6 +301,14 @@ export class CalculatorPage {
     return this.page.getByRole('button', { name: 'Ver evolução' })
   }
 
+  get projectionPanel(): Locator {
+    return this.page.getByTestId('projection-panel')
+  }
+
+  get projectionPreview(): Locator {
+    return this.page.getByTestId('projection-preview').getByRole('listitem')
+  }
+
   get projectionModal(): Locator {
     return this.page.getByTestId('projection-modal')
   }
@@ -338,6 +354,51 @@ export class CalculatorPage {
   async openStepsTable(): Promise<void> {
     await this.projectionModal.getByText(/Ver de \d+ em \d+ levels/).click()
     await expect(this.stepsTable).toBeVisible()
+  }
+
+  // --- mapa de caça ------------------------------------------------------
+
+  get matchupPanel(): Locator {
+    return this.page.getByTestId('matchup-panel')
+  }
+
+  get seeMatchupButton(): Locator {
+    return this.page.getByRole('button', { name: 'Ver mapa' })
+  }
+
+  get matchupModal(): Locator {
+    return this.page.getByTestId('matchup-modal')
+  }
+
+  get matchupLoading(): Locator {
+    return this.page.getByTestId('matchup-loading')
+  }
+
+  get matchupBuckets(): Locator {
+    return this.page.getByTestId('matchup-buckets')
+  }
+
+  bucket(multiplier: number): Locator {
+    return this.page.getByTestId(`bucket-${multiplier}`)
+  }
+
+  offensiveTab(): Locator {
+    return this.matchupModal.getByRole('tab', { name: 'Quem eu mato fácil' })
+  }
+
+  defensiveTab(): Locator {
+    return this.matchupModal.getByRole('tab', { name: 'Quem me mata' })
+  }
+
+  async openMatchup(): Promise<void> {
+    await this.seeMatchupButton.click()
+    await expect(this.matchupModal).toBeVisible()
+    await expect(this.matchupBuckets).toBeVisible()
+  }
+
+  /** Chip de uma espécie dentro de um bucket. */
+  speciesChip(multiplier: number, slug: string): Locator {
+    return this.bucket(multiplier).getByRole('button', { name: new RegExp(slug, 'i') })
   }
 
   // --- tutorial ----------------------------------------------------------

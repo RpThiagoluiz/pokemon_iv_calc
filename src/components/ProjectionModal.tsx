@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { POWER_COLOR, SERIES_COLORS } from '../config/chart.config'
 import {
-  PROJECTION_MAX_LEVEL,
   PROJECTION_STEP,
   clampLevel,
   hasSpread,
@@ -38,8 +37,15 @@ export function ProjectionModal({
   onClose: () => void
 }) {
   const atualLvl = clampLevel(currentLevel)
-  const [alvo, setAlvo] = useState(() => Math.min(PROJECTION_MAX_LEVEL, atualLvl + 100))
-  const [texto, setTexto] = useState(String(Math.min(PROJECTION_MAX_LEVEL, atualLvl + 100)))
+  const [alvo, setAlvo] = useState(() => atualLvl + 100)
+  const [texto, setTexto] = useState(String(atualLvl + 100))
+
+  /*
+   * O jogo não tem teto de level, então o campo aceita qualquer número. O
+   * slider precisa de um fim, e ele acompanha: vai até 500 acima do level
+   * atual, ou até onde o usuário digitou, o que for maior.
+   */
+  const tetoSlider = Math.max(atualLvl + 500, alvo)
 
   const aplicar = (v: string) => {
     setTexto(v)
@@ -84,8 +90,14 @@ export function ProjectionModal({
   }))
 
   return (
-    <Modal open={open} onClose={onClose} labelledBy="projection-title" testId="projection-modal">
-      <div className="mx-auto flex h-full max-w-5xl flex-col">
+    <Modal
+      open={open}
+      onClose={onClose}
+      labelledBy="projection-title"
+      testId="projection-modal"
+      variant="centered"
+    >
+      <div className="flex h-full flex-col">
         <header className="flex items-start justify-between gap-4 border-b border-[var(--color-border-default)] px-4 py-4 sm:px-6 sm:py-5">
           <div className="min-w-0">
             <h2
@@ -140,20 +152,15 @@ export function ProjectionModal({
           {/* --- level alvo --- */}
           <section className="rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] p-4">
             <div className="grid gap-3 sm:grid-cols-[10rem_1fr] sm:items-end">
-              <Field label="Level alvo" hint={`de ${atualLvl} até ${PROJECTION_MAX_LEVEL}`}>
-                <NumberInput
-                  value={texto}
-                  min={atualLvl}
-                  max={PROJECTION_MAX_LEVEL}
-                  onChange={aplicar}
-                />
+              <Field label="Level alvo" hint={`a partir de ${atualLvl} — sem teto`}>
+                <NumberInput value={texto} min={atualLvl} onChange={aplicar} />
               </Field>
               <label className="block pb-2">
                 <span className="sr-only">Level alvo (deslizante)</span>
                 <input
                   type="range"
                   min={atualLvl}
-                  max={PROJECTION_MAX_LEVEL}
+                  max={tetoSlider}
                   value={alvo}
                   onChange={(e) => {
                     setAlvo(Number(e.target.value))

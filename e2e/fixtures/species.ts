@@ -28,7 +28,37 @@ export const ALAKAZAM: SpeciesFixture = {
   types: ['psychic'],
 }
 
-export const ALL_SPECIES = [VULPIX, ALAKAZAM]
+/** Planta/Aço: o alvo ×4 de um atacante Fogo. Existe para provar o tipo duplo. */
+export const FERROTHORN: SpeciesFixture = {
+  id: 598,
+  slug: 'ferrothorn',
+  baseStats: { hp: 74, atk: 94, def: 131, spa: 54, spd: 116, spe: 20 },
+  types: ['grass', 'steel'],
+}
+
+/** Voador puro: imune a Terrestre. */
+export const PIDGEY: SpeciesFixture = {
+  id: 16,
+  slug: 'pidgey',
+  baseStats: { hp: 40, atk: 45, def: 40, spa: 35, spd: 35, spe: 56 },
+  types: ['normal', 'flying'],
+}
+
+export const ALL_SPECIES = [PIDGEY, VULPIX, ALAKAZAM, FERROTHORN]
+
+/**
+ * Espécies por tipo, no formato de `/api/v2/type/{nome}`.
+ *
+ * O mapa de caça monta o índice a partir dos 18 endpoints de tipo, então o
+ * stub precisa servi-los também — e2e nenhum toca a rede de verdade.
+ */
+export function toTypePayload(type: string) {
+  return {
+    pokemon: ALL_SPECIES.filter((s) => s.types.includes(type)).map((s) => ({
+      pokemon: { name: s.slug, url: `https://pokeapi.co/api/v2/pokemon/${s.id}/` },
+    })),
+  }
+}
 
 /** Como a UI exibe o número da Pokédex: `#037`, com zeros à esquerda. */
 export function dexNumber(species: SpeciesFixture): string {

@@ -151,6 +151,8 @@ Mobile-first. Breakpoints reais testados: **360 / 768 / 1024 / 1440**.
 | esconder só com `opacity-0` | o elemento segue na árvore de acessibilidade e clicável. Some `invisible` junto. |
 | `Button` sem `whitespace-nowrap` | "+ Comparar" quebrou em duas linhas quando o painel apertou. |
 | seletor por placeholder no e2e | `getByPlaceholder('vulpix')` casou também com o campo Apelido ("ex.: Vulpix do hunt"). Use label exato ou `data-testid`. |
+| `?` de dica dentro do `<label>` | o texto do tooltip entra no **nome acessível** do campo e `getByLabel('Level')` para de casar. O `HintMark` fica ao lado do `<label>`, nunca dentro. |
+| tooltip centrado perto da borda | o balão de 288px sai da tela e o texto é cortado. `Tooltip` tem `align="start"` / `"end"` para isso. |
 | `getByLabel` sem `exact` | `getByLabel('Level')` passou a casar com "Level alvo" e com o `<title>` dos gráficos quando a projeção entrou — 19 testes caíram de uma vez. Todo label de campo é exato. |
 | `flex-1` em elemento que não encolhe | `<input type="range">` vazou da célula sem `min-w-0`. |
 | cor como único sinal | reprova a11y e some para daltônicos. |

@@ -43,6 +43,16 @@ A comparação é travada na espécie atual: trocar de Pokémon a limpa. A lista
 
 Se algum Pokémon ficou ambíguo, o painel avisa que a comparação é aproximada. Nesse caso o "melhor por stat" usa o **piso** da faixa, não o teto — ninguém ganha destaque por um valor que talvez não exista.
 
+## Mapa de caça
+
+Depois de buscar a espécie — e **só isso**, sem preencher nada — o botão **Ver mapa** abre a lista de quem esse Pokémon bate forte e quem bate forte nele.
+
+As espécies vêm agrupadas por multiplicador (×4, ×2, ×1, ×0,5, ×0,25, ×0), com **tipo duplo e imunidade** já resolvidos — que é onde a conta de cabeça falha: Terrestre não toca em nada Voador, mesmo que o outro tipo seja fraco a Terrestre. Clicar num Pokémon da lista carrega ele no app.
+
+O índice das 1025 espécies é montado a partir dos 18 endpoints de tipo da PokeAPI (374 KB) **na primeira vez que você abre o mapa**, e fica em cache como 26 KB.
+
+> A tabela de tipos é a canônica da série e **não foi confirmada dentro do Poke Idle World**. O modal avisa isso. Se o jogo divergir, a correção é só em `src/config/typechart.config.ts`.
+
 ## Futuro do Pokémon
 
 No card de Power, **Ver evolução** abre a projeção: stats e Power conforme o Pokémon sobe, até o level 1000.

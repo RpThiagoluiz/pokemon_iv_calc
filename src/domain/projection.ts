@@ -1,11 +1,26 @@
 import { calcAllStats, calcPower } from './formula'
 import { STAT_KEYS, type GrowthRange, type Stats } from './types'
 
-/** Teto de level da projeção. Acima disso o número deixa de dizer algo útil. */
-export const PROJECTION_MAX_LEVEL = 1000
+/**
+ * O jogo NÃO tem teto de level, então a projeção também não impõe um.
+ *
+ * Este número é só uma trava de sanidade contra entrada absurda (ou colada por
+ * engano), que de outro modo geraria um laço gigantesco. Não é regra de
+ * produto: ninguém joga perto disso.
+ */
+export const PROJECTION_SAFETY_LEVEL = 100_000
 
 /** Distância entre os marcos exibidos. */
 export const PROJECTION_STEP = 20
+
+/**
+ * Teto de pontos no gráfico.
+ *
+ * Sem isto, projetar do level 100 ao 50.000 desenharia 2.500 pontos — lento e
+ * ilegível. Passando disso, o passo cresce em múltiplos de `PROJECTION_STEP`,
+ * então os marcos continuam sendo "redondos".
+ */
+export const PROJECTION_MAX_POINTS = 60
 
 /** Quantos marcos além do level atual entram nos cartões de leitura rápida. */
 export const MILESTONE_COUNT = 2
@@ -43,7 +58,13 @@ function meio(a: Stats, b: Stats): Stats {
 
 export function clampLevel(level: number): number {
   if (!Number.isFinite(level)) return 1
-  return Math.min(PROJECTION_MAX_LEVEL, Math.max(1, Math.floor(level)))
+  return Math.min(PROJECTION_SAFETY_LEVEL, Math.max(1, Math.floor(level)))
+}
+
+/** Passo que mantém a série legível, arredondado para múltiplo de `base`. */
+export function stepFor(span: number, base = PROJECTION_STEP): number {
+  const fator = Math.ceil(span / (base * PROJECTION_MAX_POINTS))
+  return base * Math.max(1, fator)
 }
 
 /**
@@ -88,7 +109,7 @@ export function projectSeries(
   const fim = clampLevel(to)
   if (fim <= inicio) return [projectAt(input, inicio)]
 
-  const passo = Math.max(1, Math.floor(step))
+  const passo = stepFor(fim - inicio, Math.max(1, Math.floor(step)))
   const niveis: number[] = []
   for (let lvl = inicio; lvl < fim; lvl += passo) niveis.push(lvl)
 
@@ -104,13 +125,13 @@ export function projectSeries(
   return niveis.map((lvl) => projectAt(input, lvl))
 }
 
-/** Level atual mais os próximos marcos, sem passar do teto. */
+/** Level atual mais os próximos marcos. */
 export function milestoneLevels(current: number, count = MILESTONE_COUNT): number[] {
   const atual = clampLevel(current)
   const out = [atual]
   for (let i = 1; i <= count; i++) {
     const lvl = atual + i * PROJECTION_STEP
-    if (lvl <= PROJECTION_MAX_LEVEL) out.push(lvl)
+    if (lvl <= PROJECTION_SAFETY_LEVEL) out.push(lvl)
   }
   return out
 }

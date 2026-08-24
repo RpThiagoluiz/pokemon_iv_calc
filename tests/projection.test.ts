@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { calcAllStats, calcPower } from '../src/domain/formula'
 import {
   MILESTONE_COUNT,
-  PROJECTION_MAX_LEVEL,
+  PROJECTION_MAX_POINTS,
+  PROJECTION_SAFETY_LEVEL,
   PROJECTION_STEP,
   clampLevel,
   hasSpread,
@@ -40,11 +41,17 @@ const CLOYSTER: ProjectionInput = {
 }
 
 describe('clampLevel', () => {
-  it('prende entre 1 e o teto', () => {
+  it('tem piso 1 e nenhum teto de produto', () => {
     expect(clampLevel(0)).toBe(1)
     expect(clampLevel(-40)).toBe(1)
-    expect(clampLevel(5000)).toBe(PROJECTION_MAX_LEVEL)
     expect(clampLevel(NaN)).toBe(1)
+    // O jogo não limita o level, então 5000 passa direto.
+    expect(clampLevel(5000)).toBe(5000)
+  })
+
+  it('a trava de sanidade só pega entrada absurda', () => {
+    expect(clampLevel(PROJECTION_SAFETY_LEVEL * 10)).toBe(PROJECTION_SAFETY_LEVEL)
+    expect(clampLevel(Infinity)).toBe(1)
   })
 
   it('descarta a parte fracionária', () => {
@@ -89,8 +96,10 @@ describe('projectAt — monotonia', () => {
     }
   })
 
-  it('o level pedido é preso ao teto', () => {
-    expect(projectAt(CRAVADO, 99999).level).toBe(PROJECTION_MAX_LEVEL)
+  it('projeta bem acima de 1000 — o jogo não para lá', () => {
+    const p = projectAt(CRAVADO, 5000)
+    expect(p.level).toBe(5000)
+    expect(p.power).toBeGreaterThan(projectAt(CRAVADO, 1000).power)
   })
 })
 
@@ -158,10 +167,16 @@ describe('projectSeries', () => {
     expect(projectSeries(CRAVADO, 200, 100)).toHaveLength(1)
   })
 
-  it('do 1 ao teto não explode em pontos demais', () => {
-    const s = projectSeries(CRAVADO, 1, PROJECTION_MAX_LEVEL)
-    expect(s.length).toBeLessThanOrEqual(PROJECTION_MAX_LEVEL / PROJECTION_STEP + 2)
-    expect(s[s.length - 1].level).toBe(PROJECTION_MAX_LEVEL)
+  it('span enorme não explode em pontos: o passo cresce', () => {
+    const s = projectSeries(CRAVADO, 1, 50_000)
+    expect(s.length).toBeLessThanOrEqual(PROJECTION_MAX_POINTS + 2)
+    expect(s[s.length - 1].level).toBe(50_000)
+  })
+
+  it('o passo ampliado continua múltiplo de 20, para os marcos serem redondos', () => {
+    const s = projectSeries(CRAVADO, 100, 50_000)
+    const delta = s[1].level - s[0].level
+    expect(delta % PROJECTION_STEP).toBe(0)
   })
 })
 
@@ -171,9 +186,8 @@ describe('milestoneLevels', () => {
     expect(milestoneLevels(119)).toHaveLength(MILESTONE_COUNT + 1)
   })
 
-  it('não passa do teto', () => {
-    expect(milestoneLevels(990)).toEqual([990])
-    expect(milestoneLevels(980)).toEqual([980, 1000])
+  it('segue além de 1000, porque o jogo segue', () => {
+    expect(milestoneLevels(990)).toEqual([990, 1010, 1030])
   })
 })
 
