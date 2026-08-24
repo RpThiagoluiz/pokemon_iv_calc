@@ -113,6 +113,14 @@ export class CalculatorPage {
     return this.page.getByLabel(STAT_LABELS[key], { exact: true })
   }
 
+  get levelHint(): Locator {
+    return this.page.getByTestId('level-hint')
+  }
+
+  get levelHintTooltip(): Locator {
+    return this.page.getByTestId('level-hint-content')
+  }
+
   get nicknameInput(): Locator {
     return this.page.getByLabel('Apelido')
   }
@@ -291,6 +299,14 @@ export class CalculatorPage {
 
   get seeProjectionButton(): Locator {
     return this.page.getByRole('button', { name: 'Ver evolução' })
+  }
+
+  get projectionPanel(): Locator {
+    return this.page.getByTestId('projection-panel')
+  }
+
+  get projectionPreview(): Locator {
+    return this.page.getByTestId('projection-preview').getByRole('listitem')
   }
 
   get projectionModal(): Locator {

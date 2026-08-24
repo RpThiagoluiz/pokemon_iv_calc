@@ -7,6 +7,7 @@ import { HelpIcon, Tutorial } from './components/Tutorial'
 import { IvResult } from './components/IvResult'
 import { PowerCard } from './components/PowerCard'
 import { ProjectionModal } from './components/ProjectionModal'
+import { ProjectionPanel } from './components/ProjectionPanel'
 import { SpeciesPanel } from './components/SpeciesPanel'
 import { SpecimenPanel } from './components/SpecimenPanel'
 import { EMPTY_FORM, type SpecimenForm } from './components/specimenForm'
@@ -221,9 +222,16 @@ export default function App() {
                   statSum={statSum}
                   quality={parsed.quality!}
                   qualityRange={solved?.qualityRange}
-                  onSeeProjection={projection ? () => setProjectionOpen(true) : undefined}
                 />
               </>
+            )}
+
+            {projection && input && (
+              <ProjectionPanel
+                input={projection}
+                currentLevel={input.level}
+                onOpen={() => setProjectionOpen(true)}
+              />
             )}
 
             {species.species && (

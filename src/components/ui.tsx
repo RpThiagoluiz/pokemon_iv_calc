@@ -48,13 +48,32 @@ export function Panel({
  */
 const FieldContext = createContext<{ id: string; describedBy?: string } | null>(null)
 
+/** Ícone de interrogação que abre um tooltip ao lado do rótulo de um campo. */
+export function HintMark({ content, testId }: { content: string; testId?: string }) {
+  return (
+    <Tooltip content={content} testId={testId} align="start">
+      <span
+        aria-hidden
+        className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[var(--color-border-strong)] text-[10px] leading-none font-bold text-[var(--color-text-tertiary)]"
+      >
+        ?
+      </span>
+    </Tooltip>
+  )
+}
+
 export function Field({
   label,
   hint,
+  tooltip,
+  tooltipTestId,
   children,
 }: {
   label: string
   hint?: string
+  /** Explicação longa demais para o `hint` — vira um "?" ao lado do rótulo. */
+  tooltip?: string
+  tooltipTestId?: string
   children: ReactNode
 }) {
   const id = useId()
@@ -62,12 +81,18 @@ export function Field({
 
   return (
     <div className="block">
-      <label
-        htmlFor={id}
-        className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]"
-      >
-        {label}
-      </label>
+      {/* O "?" fica FORA do <label>: dentro dele, o texto do tooltip entraria
+          no nome acessível do campo e `getByLabel('Level')` deixaria de casar.
+          Mesma lição da dica e do tooltip — descrever não é nomear. */}
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <label
+          htmlFor={id}
+          className="text-xs font-medium text-[var(--color-text-secondary)]"
+        >
+          {label}
+        </label>
+        {tooltip && <HintMark content={tooltip} testId={tooltipTestId} />}
+      </div>
       <FieldContext.Provider value={{ id, describedBy: hintId }}>{children}</FieldContext.Provider>
       {hint && (
         <span id={hintId} className="mt-1 block text-xs text-[var(--color-text-tertiary)]">
@@ -295,8 +320,12 @@ export function Tooltip({
   content: string
   children: ReactNode
   testId?: string
-  /** `end` alinha o balão à direita do gatilho — use perto da borda da tela. */
-  align?: 'center' | 'end'
+  /**
+   * `end` alinha o balão à direita do gatilho e `start` à esquerda — use perto
+   * das bordas. Centrado num gatilho colado na borda esquerda, o texto sai da
+   * tela e é cortado (aconteceu com o "?" do campo Level).
+   */
+  align?: 'center' | 'start' | 'end'
 }) {
   const id = useId()
   return (
@@ -316,7 +345,11 @@ export function Tooltip({
          * `max-w` prende o balão dentro da viewport no celular.
          */
         className={`pointer-events-none absolute bottom-full z-30 mb-2 hidden w-60 max-w-[calc(100vw-1.5rem)] rounded-[var(--radius-md)] border border-[var(--color-border-strong)] bg-[var(--color-surface-overlay)] px-3 py-2 text-xs leading-relaxed font-normal text-[var(--color-text-primary)] shadow-2xl shadow-black/60 group-focus-within:block group-hover:block sm:w-72 ${
-          align === 'end' ? 'right-0' : 'left-1/2 -translate-x-1/2'
+          align === 'end'
+            ? 'right-0'
+            : align === 'start'
+              ? 'left-0'
+              : 'left-1/2 -translate-x-1/2'
         }`}
       >
         {content}
