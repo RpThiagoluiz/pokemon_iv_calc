@@ -86,4 +86,12 @@ export interface SolveResult {
    * exibida pelo jogo. `null` quando a quality foi tratada como exata.
    */
   qualityRange: { min: number; max: number } | null
+  /**
+   * Faixa de IV total das soluções.
+   *
+   * Vem do solver, e NÃO de somar as faixas por stat: a soma dos mínimos de
+   * cada stat não é um total que exista de verdade. Informado o IV total, a
+   * faixa colapsa nele — era o bug de exibir 142–155 mesmo com 149 digitado.
+   */
+  ivTotalRange: { min: number; max: number } | null
 }

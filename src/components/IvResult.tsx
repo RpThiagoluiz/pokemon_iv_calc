@@ -1,4 +1,3 @@
-import { ivTotalRange } from '../domain/inverse'
 import {
   GROWTH_MAX,
   IV_TOTAL_MAX,
@@ -52,7 +51,12 @@ export function IvResult({
   }
 
   const growths = result.growths as Stats<{ min: number; max: number; values: number[] }>
-  const total = ivTotalRange(growths)
+  /*
+   * A faixa vem do solver, não de somar as faixas por stat: somar os mínimos
+   * de cada stat produz um total que nenhuma combinação atinge, e por isso
+   * informar o IV total não mudava nada na tela.
+   */
+  const total = result.ivTotalRange ?? { min: 0, max: 0 }
   const exact = result.status === 'exact'
 
   return (

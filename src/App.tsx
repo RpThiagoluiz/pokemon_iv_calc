@@ -20,7 +20,7 @@ import { COMPARE_MAX, defaultNickname, type CompareEntry } from './domain/compar
 import { explainSolution } from './domain/explain'
 import { sumStats } from './domain/formula'
 import { autoWeights, gradeFromRanges, keyStats } from './domain/grade'
-import { ivTotalRange, solveGrowths } from './domain/inverse'
+import { solveGrowths } from './domain/inverse'
 import type { ProjectionInput } from './domain/projection'
 import { STAT_KEYS, type SpecimenInput, type Stats } from './domain/types'
 import { useSpecies } from './hooks/useSpecies'
@@ -169,7 +169,7 @@ export default function App() {
         quality: input.quality,
         stats: { ...input.stats },
         growths: solved.growths!,
-        ivTotal: ivTotalRange(solved.growths!),
+        ivTotal: solved.ivTotalRange ?? { min: 0, max: 0 },
         grade,
         power: statSum * input.quality,
         isExact: solved.status === 'exact',

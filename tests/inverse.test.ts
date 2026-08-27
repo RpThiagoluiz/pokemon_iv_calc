@@ -164,3 +164,66 @@ describe('round-trip forward ↔ inverse (property test)', () => {
     }
   })
 })
+
+describe('IV total informado precisa mudar o resultado', () => {
+  /**
+   * Regressão real: com o Gengar em level baixo, digitar o IV total derrubava o
+   * número de soluções mas o total exibido continuava idêntico ao de antes.
+   *
+   * A causa era a UI recompor o total somando as faixas por stat. Os mínimos de
+   * cada stat vêm de combinações diferentes — e de qualitys diferentes, dentro
+   * da janela de arredondamento —, então essa soma produz totais que nenhuma
+   * solução atinge. Agora o total vem do solver.
+   */
+  const GENGAR: Stats = { hp: 60, atk: 65, def: 60, spa: 130, spd: 75, spe: 110 }
+  const GROWTHS = statsOf([30, 18, 22, 32, 21, 26])
+  const TOTAL = 149
+  const LEVEL = 12
+  const QUALITY = 1.43
+  const stats = calcAllStats(GENGAR, GROWTHS, LEVEL, QUALITY)
+
+  const base = {
+    baseStats: GENGAR,
+    level: LEVEL,
+    quality: QUALITY,
+    qualityDecimals: 2,
+    stats,
+  }
+
+  it('sem o IV total, o resultado é ambíguo e o total é uma faixa', () => {
+    const r = solveGrowths({ ...base, ivTotal: null })
+    expect(r.status).toBe('ambiguous')
+    expect(r.ivTotalRange!.max).toBeGreaterThan(r.ivTotalRange!.min)
+    expect(r.ivTotalRange!.min).toBeLessThanOrEqual(TOTAL)
+    expect(r.ivTotalRange!.max).toBeGreaterThanOrEqual(TOTAL)
+  })
+
+  it('informar o IV total colapsa o total exibido nele', () => {
+    const r = solveGrowths({ ...base, ivTotal: TOTAL })
+    expect(r.ivTotalRange).toEqual({ min: TOTAL, max: TOTAL })
+  })
+
+  it('informar o IV total corta as soluções', () => {
+    const sem = solveGrowths({ ...base, ivTotal: null })
+    const com = solveGrowths({ ...base, ivTotal: TOTAL })
+    expect(com.solutionCount).toBeLessThan(sem.solutionCount)
+  })
+
+  it('o growth verdadeiro sobrevive à restrição', () => {
+    const r = solveGrowths({ ...base, ivTotal: TOTAL })
+    for (const key of STAT_KEYS) {
+      expect(r.growths![key].values).toContain(GROWTHS[key])
+    }
+  })
+
+  it('vale também com a quality cravada, fora da janela', () => {
+    const r = solveGrowths({ ...base, qualityDecimals: null, ivTotal: TOTAL })
+    expect(r.ivTotalRange).toEqual({ min: TOTAL, max: TOTAL })
+  })
+
+  it('sem solução, não há faixa de total para exibir', () => {
+    const r = solveGrowths({ ...base, ivTotal: 6 })
+    expect(r.status).toBe('noSolution')
+    expect(r.ivTotalRange).toBeNull()
+  })
+})

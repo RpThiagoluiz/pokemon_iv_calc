@@ -45,6 +45,16 @@ A fórmula publicada em `pokepedia/systems/power` **não divulga o expoente**. E
 >
 > Lição para a próxima investigação: **antes de suspeitar da fórmula, suspeite da precisão dos números de entrada.** Todo valor exibido por um jogo é arredondado.
 
+## O IV total exibido vem do solver
+
+`SolveResult.ivTotalRange` é a faixa real de total das soluções. **Nunca recomponha o total somando as faixas por stat** — foi exatamente esse o bug: com o IV total informado, a tela seguia mostrando `142–155` porque somava o mínimo de cada stat.
+
+Os mínimos por stat vêm de combinações diferentes, e dentro da janela de quality vêm até de *qualitys* diferentes. Somar marginais independentes produz totais que nenhuma solução atinge.
+
+Regra: `ivTotal` informado ⟹ a faixa colapsa nele. Sem ele, com a quality fixa os stats são independentes e a soma das marginais é correta — daí a janela unir as faixas de cada sub-intervalo, e não recalcular no fim.
+
+`ivTotalRange(growths)` ainda existe para quem precisa da conta das marginais, mas **não é o que a UI exibe**.
+
 ## A janela de quality
 
 `solveGrowths` recebe `qualityDecimals` e trata a quality como **intervalo**, não como ponto: `1.56` com 2 casas significa `[1.555, 1.565)`.

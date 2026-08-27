@@ -188,6 +188,14 @@ function solveAtQuality(input: SpecimenInput, quality: number): SolveResult {
     growths[key] = toRange(sets[i])
   })
 
+  /*
+   * Com a quality fixa e sem restrição de soma, os stats são independentes,
+   * então somar mínimos e máximos dá a faixa real. Com o IV total informado,
+   * toda solução soma exatamente ele.
+   */
+  const totalRange =
+    ivTotal !== null ? { min: ivTotal, max: ivTotal } : ivTotalRange(growths)
+
   return {
     status: count === 1 ? 'exact' : 'ambiguous',
     growths,
@@ -195,6 +203,7 @@ function solveAtQuality(input: SpecimenInput, quality: number): SolveResult {
     impossibleStats: [],
     reason: null,
     qualityRange: { min: quality, max: quality },
+    ivTotalRange: totalRange,
   }
 }
 
@@ -206,6 +215,7 @@ function failure(reason: string, impossibleStats: StatKey[] = []): SolveResult {
     impossibleStats,
     reason,
     qualityRange: null,
+    ivTotalRange: null,
   }
 }
 
@@ -285,6 +295,8 @@ export function solveGrowths(input: SpecimenInput): SolveResult {
   let total = 0
   let qMin = Infinity
   let qMax = -Infinity
+  let ivMin = Infinity
+  let ivMax = -Infinity
   let ultimaFalha: SolveResult | null = null
 
   for (let i = 0; i < fronteiras.length - 1; i++) {
@@ -297,6 +309,13 @@ export function solveGrowths(input: SpecimenInput): SolveResult {
     total = Math.min(SOLUTION_COUNT_CAP, total + r.solutionCount)
     qMin = Math.min(qMin, fronteiras[i])
     qMax = Math.max(qMax, fronteiras[i + 1])
+    // A faixa de total vem de cada sub-intervalo, onde ela é exata. Recalcular
+    // no fim a partir da união por stat misturaria growths de qualitys
+    // diferentes e produziria totais que nenhuma solução atinge.
+    if (r.ivTotalRange) {
+      ivMin = Math.min(ivMin, r.ivTotalRange.min)
+      ivMax = Math.max(ivMax, r.ivTotalRange.max)
+    }
     for (const key of STAT_KEYS) for (const g of r.growths[key].values) uniao[key].add(g)
   }
 
@@ -317,5 +336,6 @@ export function solveGrowths(input: SpecimenInput): SolveResult {
     impossibleStats: [],
     reason: null,
     qualityRange: { min: qMin, max: qMax },
+    ivTotalRange: { min: ivMin, max: ivMax },
   }
 }

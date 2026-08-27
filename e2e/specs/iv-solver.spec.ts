@@ -1,5 +1,5 @@
 import { expect, test } from '../fixtures/test'
-import { VULPIX } from '../fixtures/species'
+import { GENGAR, VULPIX } from '../fixtures/species'
 import { STAT_KEYS, fill, growths, ivTotalOf, sumOf } from '../support/formula'
 
 test.describe('inversão de IVs', () => {
@@ -142,5 +142,48 @@ test.describe('tooltip da tag de status', () => {
     await app.ivStatus.focus()
 
     await expect(app.ivStatusTooltip).toBeVisible()
+  })
+})
+
+test.describe('o IV total informado muda o que aparece na tela', () => {
+  /**
+   * Regressão: com o Gengar em level baixo, digitar o IV total não mexia no
+   * total exibido — a tela recompunha o número somando as faixas por stat, o
+   * que produz totais que nenhuma combinação atinge.
+   */
+  const GENGAR_LOW = {
+    species: GENGAR,
+    growths: growths([30, 18, 22, 32, 21, 26]), // soma 149
+    level: 12,
+    quality: 1.43,
+  }
+
+  test('sem o IV total o resultado é uma faixa; com ele, colapsa no número', async ({ app }) => {
+    await app.enterSpecimen({ ...GENGAR_LOW, withIvTotal: false })
+
+    await expect(app.ivStatus).toHaveText('ambíguo')
+    const semTotal = (await app.ivTotalResult.innerText()).trim()
+    expect(semTotal).toContain('–')
+
+    await app.ivTotalInput.fill('149')
+
+    await expect(app.ivTotalResult).toContainText('149')
+    await expect(app.ivTotalResult).not.toHaveText(semTotal)
+  })
+
+  test('o total exibido deixa de ser uma faixa', async ({ app }) => {
+    await app.enterSpecimen(GENGAR_LOW)
+
+    const texto = (await app.ivTotalResult.innerText()).trim()
+    expect(texto.split('/')[0]).toBe('149')
+  })
+
+  test('apagar o IV total devolve a faixa', async ({ app }) => {
+    await app.enterSpecimen(GENGAR_LOW)
+    await expect(app.ivTotalResult).toContainText('149')
+
+    await app.ivTotalInput.fill('')
+
+    await expect(app.ivTotalResult).toContainText('–')
   })
 })

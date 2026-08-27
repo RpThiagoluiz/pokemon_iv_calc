@@ -44,7 +44,15 @@ export const PIDGEY: SpeciesFixture = {
   types: ['normal', 'flying'],
 }
 
-export const ALL_SPECIES = [PIDGEY, VULPIX, ALAKAZAM, FERROTHORN]
+/** Fantasma/Venenoso. Entrou pela regressão do IV total em level baixo. */
+export const GENGAR: SpeciesFixture = {
+  id: 94,
+  slug: 'gengar',
+  baseStats: { hp: 60, atk: 65, def: 60, spa: 130, spd: 75, spe: 110 },
+  types: ['ghost', 'poison'],
+}
+
+export const ALL_SPECIES = [PIDGEY, VULPIX, ALAKAZAM, GENGAR, FERROTHORN]
 
 /**
  * Espécies por tipo, no formato de `/api/v2/type/{nome}`.
